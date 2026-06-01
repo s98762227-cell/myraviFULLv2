@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, touch-action: manipulation">
     <title>🐜 Муравьиный Симулятор 2D</title>
     <style>
         :root {
@@ -18,10 +18,12 @@
         #main-menu .subtitle { color: #c4a87c; font-size: 0.95em; margin-bottom: 28px; letter-spacing: 1px; }
         #main-menu .ant-icon { font-size: 4em; display: block; margin-bottom: 8px; animation: float 2s ease-in-out infinite; }
         @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-        .menu-btn { display: block; width: 100%; padding: 14px 20px; margin: 10px 0; font-size: 1.1em; font-weight: 600; letter-spacing: 1px; border: 2px solid #6b4c2a; border-radius: 14px; cursor: pointer; background: linear-gradient(180deg, #5a3f28 0%, #3d2e1c 100%); color: #f0d890; transition: all 0.2s; text-transform: uppercase; font-family: inherit; }
+        .menu-btn { display: block; width: 100%; padding: 14px 20px; margin: 10px 0; font-size: 1.1em; font-weight: 600; letter-spacing: 1px; border: 2px solid #6b4c2a; border-radius: 14px; cursor: pointer; background: linear-gradient(180deg, #5a3f28 0%, #3d2e1c 100%); color: #f0d890; transition: all 0.2s; text-transform: uppercase; font-family: inherit; position: relative; }
         .menu-btn:hover { background: linear-gradient(180deg, #6b4c30 0%, #4a3522 100%); border-color: #8b6a3a; color: #ffe8a0; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
         .menu-btn:active { transform: scale(0.96); transition: all 0.05s; }
         .menu-btn.small { font-size: 0.85em; padding: 10px 16px; margin: 6px 0; letter-spacing: 0.5px; }
+        .new-badge { background: #ff3060; color: #fff; font-size: 0.7em; padding: 2px 8px; border-radius: 12px; margin-left: 8px; font-weight: bold; animation: pulse 1s infinite; vertical-align: middle; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         .panel { position: absolute; z-index: 20; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(180deg, #3d2e1c 0%, #2a1f10 100%); border: 3px solid #6b4c2a; border-radius: 20px; padding: 28px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); min-width: 340px; max-width: 440px; max-height: 80vh; overflow-y: auto; color: #e0d8c8; display: none; }
         .panel.visible { display: block; }
         .panel h2 { text-align: center; color: #f0c060; font-size: 1.6em; margin-bottom: 16px; letter-spacing: 1px; }
@@ -49,9 +51,8 @@
         .toggle-switch.on { background: #5a8a3a; border-color: #7ab85a; }
         .toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #e0d8c8; border-radius: 50%; transition: left 0.3s; }
         .toggle-switch.on::after { left: 25px; }
-        .toggle-switch.disabled { opacity: 0.5; pointer-events: none; }
-        #hud { position: absolute; z-index: 5; top: 12px; left: 16px; color: #f0e8d0; font-size: 0.9em; pointer-events: none; text-shadow: 0 2px 6px rgba(0,0,0,0.7); line-height: 1.6; letter-spacing: 0.5px; }
-        #hud .hud-item { background: rgba(0,0,0,0.45); padding: 6px 12px; border-radius: 8px; margin: 4px 0; display: inline-block; backdrop-filter: blur(4px); }
+        #hud { position: absolute; z-index: 5; top: 12px; left: 16px; color: #f0e8d0; font-size: 0.9em; pointer-events: none; text-shadow: 0 2px 6px rgba(0,0,0,0.7); line-height: 1.6; letter-spacing: 0.5px; display: flex; flex-direction: column; gap: 4px; }
+        #hud .hud-item { background: rgba(0,0,0,0.45); padding: 6px 12px; border-radius: 8px; display: inline-block; backdrop-filter: blur(4px); width: fit-content; }
         #hud .hud-val { color: #f0c060; font-weight: 700; }
         #minimap-hint { position: absolute; z-index: 5; bottom: 16px; left: 50%; transform: translateX(-50%); color: #c4a87c; font-size: 0.8em; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.6); letter-spacing: 1px; opacity: 0.8; transition: opacity 1s; }
         .panel::-webkit-scrollbar { width: 6px; }
@@ -67,6 +68,12 @@
         .level-item .level-desc { font-size: 0.75em; color: #b0a080; }
         .level-item .level-reward { font-size: 0.8em; color: #c4a060; }
         .level-item .level-status { font-size: 0.85em; font-weight: 600; }
+        #inventory-hud { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; display: none; gap: 6px; background: rgba(20, 15, 10, 0.8); border: 2px solid #8b6a3a; border-radius: 12px; padding: 8px 16px; backdrop-filter: blur(6px); }
+        #inventory-hud.visible { display: flex; }
+        .inv-slot { width: 48px; height: 48px; background: rgba(0,0,0,0.5); border: 2px solid #5a3f28; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.8em; position: relative; }
+        .inv-slot .coin-stack { font-size: 0.6em; position: absolute; bottom: 2px; right: 4px; color: #fff; font-weight: bold; }
+        #car-status { position: absolute; z-index: 5; top: 120px; right: 20px; color: #fff; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; font-size: 0.9em; display: none; }
+        #car-status.visible { display: block; }
         @media (max-width: 500px) {
             #main-menu { min-width: auto; width: 90vw; padding: 24px 18px; }
             #main-menu h1 { font-size: 1.6em; }
@@ -79,12 +86,21 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="hud">
-        <span class="hud-item">🍄 Ресурсы: <span class="hud-val" id="hud-resources">0</span></span><br>
-        <span class="hud-item">🐜 Муравьи: <span class="hud-val" id="hud-ants">1</span></span><br>
-        <span class="hud-item">⭐ Очки: <span class="hud-val" id="hud-score">0</span></span><br>
+        <span class="hud-item">🍄 Ресурсы: <span class="hud-val" id="hud-resources">0</span></span>
+        <span class="hud-item">🐜 Муравьи: <span class="hud-val" id="hud-ants">1</span></span>
+        <span class="hud-item">⭐ Очки: <span class="hud-val" id="hud-score">0</span></span>
         <span class="hud-item">🥬 Капуста: <span class="hud-val" id="hud-cabbage">0</span></span>
+        <span class="hud-item">🪙 Монеты: <span class="hud-val" id="hud-coins">0</span></span>
+        <span class="hud-item">💎 Бриллианты: <span class="hud-val" id="hud-diamonds">0</span></span>
     </div>
-    <div id="minimap-hint">WASD / Стрелки — движение | E — меню | M — карта | Клик — цель</div>
+    <div id="inventory-hud">
+        <div class="inv-slot" id="inv-slot-0">🪙<span class="coin-stack">0</span></div>
+        <div class="inv-slot" id="inv-slot-1">🪙<span class="coin-stack">0</span></div>
+        <div class="inv-slot" id="inv-slot-2">🪙<span class="coin-stack">0</span></div>
+        <div class="inv-slot" id="inv-slot-3">🪙<span class="coin-stack">0</span></div>
+    </div>
+    <div id="car-status">🚗 Машина: <span id="car-timer">0</span>с | Кулдаун: <span id="car-cooldown">0</span>с</div>
+    <div id="minimap-hint">WASD / Стрелки — движение | E — меню | M — карта | V — машина | Клик — цель</div>
 
     <div id="main-menu">
         <span class="ant-icon">🐜</span>
@@ -92,7 +108,10 @@
         <p class="subtitle">Симулятор колонии</p>
         <button class="menu-btn" id="btn-play">🎮 Играть</button>
         <button class="menu-btn" id="btn-shop">🛒 Магазин</button>
+        <button class="menu-btn" id="btn-beta">🚀 БЕТА-Улучшения <span class="new-badge">NEW</span></button>
         <button class="menu-btn" id="btn-skins">🎨 Скины</button>
+        <button class="menu-btn" id="btn-coin-skins">🪙 Скины за монеты <span class="new-badge">NEW</span></button>
+        <button class="menu-btn" id="btn-diamond-skins">💎 Скины за бриллианты</button>
         <button class="menu-btn" id="btn-levels">🏆 Уровни (50)</button>
         <button class="menu-btn" id="btn-settings">⚙️ Настройки</button>
     </div>
@@ -106,12 +125,36 @@
         <button class="menu-btn small" id="shop-back">Назад</button>
     </div>
 
+    <div class="panel" id="beta-panel">
+        <button class="close-btn" id="close-beta">✕</button>
+        <h2>🚀 БЕТА-Улучшения</h2>
+        <p class="currency">💰 Ресурсы: <span id="beta-balance">0</span></p>
+        <div id="beta-items"></div>
+        <button class="menu-btn small" id="beta-back">Назад</button>
+    </div>
+
     <div class="panel" id="skins-panel">
         <button class="close-btn" id="close-skins">✕</button>
         <h2>🎨 Скины муравья (60+)</h2>
         <p class="currency">💰 Ресурсы: <span id="skins-balance">0</span></p>
         <div class="skin-grid" id="skin-grid"></div>
         <button class="menu-btn small" id="skins-back">Назад</button>
+    </div>
+
+    <div class="panel" id="coin-skins-panel">
+        <button class="close-btn" id="close-coin-skins">✕</button>
+        <h2>🪙 Скины за монеты (50)</h2>
+        <p class="currency">🪙 Монеты: <span id="coin-skins-balance">0</span></p>
+        <div class="skin-grid" id="coin-skin-grid"></div>
+        <button class="menu-btn small" id="coin-skins-back">Назад</button>
+    </div>
+
+    <div class="panel" id="diamond-skins-panel">
+        <button class="close-btn" id="close-diamond-skins">✕</button>
+        <h2>💎 Скины за бриллианты (50)</h2>
+        <p class="currency">💎 Бриллианты: <span id="diamond-skins-balance">0</span></p>
+        <div class="skin-grid" id="diamond-skin-grid"></div>
+        <button class="menu-btn small" id="diamond-skins-back">Назад</button>
     </div>
 
     <div class="panel" id="settings-panel">
@@ -152,7 +195,10 @@
             const ctx = canvas.getContext('2d');
             const mainMenu = document.getElementById('main-menu');
             const shopPanel = document.getElementById('shop-panel');
+            const betaPanel = document.getElementById('beta-panel');
             const skinsPanel = document.getElementById('skins-panel');
+            const coinSkinsPanel = document.getElementById('coin-skins-panel');
+            const diamondSkinsPanel = document.getElementById('diamond-skins-panel');
             const settingsPanel = document.getElementById('settings-panel');
             const levelsPanel = document.getElementById('levels-panel');
             const mapPanel = document.getElementById('map-panel');
@@ -162,6 +208,12 @@
             const hudAnts = document.getElementById('hud-ants');
             const hudScore = document.getElementById('hud-score');
             const hudCabbage = document.getElementById('hud-cabbage');
+            const hudCoins = document.getElementById('hud-coins');
+            const hudDiamonds = document.getElementById('hud-diamonds');
+            const inventoryHud = document.getElementById('inventory-hud');
+            const carStatusDiv = document.getElementById('car-status');
+            const carTimerSpan = document.getElementById('car-timer');
+            const carCooldownSpan = document.getElementById('car-cooldown');
             const minimapHint = document.getElementById('minimap-hint');
 
             // ─────────────── AUDIO ───────────────
@@ -232,6 +284,7 @@
             const WORLD_W = 2200, WORLD_H = 1700;
             let gameState = 'menu';
             let totalResources = 0, scorePoints = 0, cabbageCount = 0;
+            let silverCoins = 0, diamonds = 0;
             let playerAnt = null, aiAnts = [], resources = [], pheromoneTrails = [], particles = [], anthill = null;
             let camera = { x: 0, y: 0, targetX: 0, targetY: 0 };
             let keys = {}, mouseWorld = { x: 0, y: 0 }, mouseScreen = { x: 0, y: 0 }, clickTarget = null;
@@ -241,18 +294,21 @@
                 sound: true, music: true, musicVolume: 40, footsteps: true,
                 darkness: false, scaryMode: false, sonicMode: false, glebMode: false
             };
-            let upgrades = { speed: 0, capacity: 0, pheromoneStrength: 0 };
+            let upgrades = { speed: 0, capacity: 0, pheromoneStrength: 0, car: 0, inventory: 0 };
             let cabbageUpgrades = { sprint: 0, radar: 0, backpack: 0 };
             const upgradeDefs = {
                 speed: { name: 'Скорость', desc: 'Ускорение движения', priceBase: 20, maxLevel: 4, perLevel: 0.3 },
                 capacity: { name: 'Вместимость инвентаря', desc: 'Нести больше ресурсов за раз', priceBase: 40, maxLevel: 2, perLevel: 1 },
                 pheromoneStrength: { name: 'Сила феромонов', desc: 'Следы держатся дольше', priceBase: 25, maxLevel: 3, perLevel: 5 },
+                car: { name: '🚗 Машина', desc: 'Кнопка V: ускорение x2 на 30 сек', priceBase: 150, maxLevel: 1, perLevel: 0 },
+                inventory: { name: '🎒 Инвентарь', desc: '4 слота для серебряных монет', priceBase: 200, maxLevel: 1, perLevel: 0 }
             };
             const cabbageUpgradeDefs = {
                 sprint: { name: 'Капустный спринт', desc: 'Скорость +15% за уровень', priceCabbage: 3, maxLevel: 3 },
                 radar: { name: 'Капустный радар', desc: 'Радиус автосбора +10', priceCabbage: 2, maxLevel: 3 },
                 backpack: { name: 'Капустный рюкзак', desc: '+1 к инвентарю', priceCabbage: 4, maxLevel: 2 },
             };
+            let carActive = false, carTimer = 0, carCooldownRemaining = 0;
 
             // Генерация 50 скинов для уровней
             const levelSkinNames = [
@@ -287,7 +343,6 @@
                 { id: 'tr_spice', name: 'Tr_Spice', color: '#1e3b8b', accent: '#0a1a40', price: 0, owned: false, equipped: false, nickname: 'tr_Spice' },
                 { id: 'gleb176', name: '32gleb176', color: '#ff5080', accent: '#ff8020', price: 0, owned: false, equipped: false, rainbow: true, nickname: '32gleb176' },
             ];
-            // Добавляем уровневые скины (lvl1..lvl50)
             for (let i = 0; i < 50; i++) {
                 skinDefs.push({
                     id: `lvl${i+1}`,
@@ -300,6 +355,31 @@
                     unlockLevel: i+1
                 });
             }
+
+            // Новые скины за монеты (50 шт)
+            const coinSkinNames = ["Медный","Бронзовый","Серебряный","Золотой","Платиновый","Неон","Лава","Океан","Лес","Песок","Снег","Сумерки","Рассвет","Гроза","Туман","Янтарь","Коралл","Сапфир","Рубин","Изумруд","Топаз","Аметист","Жемчуг","Малахит","Обсидиан","Оникс","Гранат","Аквамарин","Цитрин","Хризолит","Лунный","Солнечный","Звездный","Комета","Метеор","Галактика","Туманность","Квант","Фотон","Электрон","Протон","Нейтрон","Глюон","Кварк","Бозон","Фермион","Плазма","Радиант","Эфир","Радужный"];
+            const coinSkinDefs = [];
+            for (let i = 0; i < 50; i++) {
+                const hue = (i * 7) % 360;
+                coinSkinDefs.push({
+                    id: `coin${i}`, name: coinSkinNames[i], price: 5 + i * 3,
+                    color: `hsl(${hue}, 70%, 50%)`, accent: `hsl(${hue}, 80%, 30%)`,
+                    owned: false, equipped: false, currency: 'coin', rainbow: i === 49
+                });
+            }
+
+            // Новые скины за бриллианты (50 шт)
+            const diamondSkinNames = ["Алмаз","Бриллиант","Кристалл","Лед","Зеркало","Призма","Ультра","Голограмма","Фантом","Мираж","Титан","Мифрил","Адамант","Орихалк","Электрум","Хром","Палладий","Иридий","Осмий","Родий","Рутений","Технеций","Молибден","Вольфрам","Тантал","Ниобий","Цирконий","Гафний","Ванадий","Никель","Кобальт","Магний","Берилл","Корунд","Шпинель","Циркон","Турмалин","Гранат","Топаз","Опал","Бирюза","Лазурит","Малахит","Янтарь","Коралл","Жемчуг","Перламутр","Авантюрин","Яшма","Халцедон"];
+            const diamondSkinDefs = [];
+            for (let i = 0; i < 50; i++) {
+                const hue = (i * 13 + 180) % 360;
+                diamondSkinDefs.push({
+                    id: `diamond${i}`, name: diamondSkinNames[i], price: 1 + i,
+                    color: `hsl(${hue}, 60%, 75%)`, accent: `hsl(${hue}, 70%, 45%)`,
+                    owned: false, equipped: false, currency: 'diamond', rainbow: i === 49
+                });
+            }
+
             let currentSkin = skinDefs[0];
 
             // Генерация 50 уровней
@@ -346,8 +426,11 @@
                 keys[e.key.toLowerCase()] = true;
                 if (e.key.toLowerCase() === 'e' && gameState === 'playing') openMainMenu();
                 if (e.key.toLowerCase() === 'm' && (gameState === 'playing' || gameState === 'map')) toggleMap();
+                if (e.key.toLowerCase() === 'v' && gameState === 'playing' && upgrades.car && carCooldownRemaining <= 0 && !carActive) {
+                    carActive = true; carTimer = 30; carCooldownRemaining = 60;
+                }
                 if (e.key === 'Escape') {
-                    if (['shop','skins','settings','levels'].includes(gameState)) {
+                    if (['shop','skins','settings','levels','coin-skins','diamond-skins','beta'].includes(gameState)) {
                         closeAllPanels(); gameState = playerAnt ? 'playing' : 'menu';
                         if (!playerAnt) mainMenu.classList.remove('hidden');
                     } else if (gameState === 'map') { mapPanel.classList.remove('visible'); gameState = 'playing'; }
@@ -368,25 +451,48 @@
 
             // ─────────────── UI ───────────────
             function openMainMenu() { gameState = 'menu'; mainMenu.classList.remove('hidden'); closeAllPanels(); minimapHint.style.opacity = '0'; }
-            function closeAllPanels() { shopPanel.classList.remove('visible'); skinsPanel.classList.remove('visible'); settingsPanel.classList.remove('visible'); levelsPanel.classList.remove('visible'); mapPanel.classList.remove('visible'); }
-            function updateAllBalances() { document.getElementById('shop-balance').textContent = totalResources; document.getElementById('skins-balance').textContent = totalResources; document.getElementById('shop-cabbage').textContent = cabbageCount; renderShopItems(); renderCabbageShopItems(); renderSkinGrid(); renderLevelsPanel(); }
+            function closeAllPanels() { shopPanel.classList.remove('visible'); skinsPanel.classList.remove('visible'); settingsPanel.classList.remove('visible'); levelsPanel.classList.remove('visible'); mapPanel.classList.remove('visible'); coinSkinsPanel.classList.remove('visible'); diamondSkinsPanel.classList.remove('visible'); betaPanel.classList.remove('visible'); }
+            function updateAllBalances() {
+                document.getElementById('shop-balance').textContent = totalResources;
+                document.getElementById('skins-balance').textContent = totalResources;
+                document.getElementById('shop-cabbage').textContent = cabbageCount;
+                document.getElementById('beta-balance').textContent = totalResources;
+                document.getElementById('coin-skins-balance').textContent = silverCoins;
+                document.getElementById('diamond-skins-balance').textContent = diamonds;
+                renderShopItems();
+                renderCabbageShopItems();
+                renderBetaItems();
+                renderSkinGrid();
+                renderCoinSkinGrid();
+                renderDiamondSkinGrid();
+                renderLevelsPanel();
+            }
             function renderShopItems() {
-                const container = document.getElementById('shop-items'); let html = '';
+                const container = document.getElementById('shop-items');
+                let html = '';
                 for (const [key, def] of Object.entries(upgradeDefs)) {
-                    const level = upgrades[key]; const maxed = level >= def.maxLevel;
+                    if (key === 'car' || key === 'inventory') continue;
+                    const level = upgrades[key] || 0;
+                    const maxed = level >= def.maxLevel;
                     const price = maxed ? 0 : def.priceBase + level * def.priceBase;
                     html += `<div class="shop-item"><div class="info"><div class="name">${def.name} (ур. ${level}/${def.maxLevel})</div><div class="desc">${def.desc}</div></div><button class="buy-btn ${maxed?'owned':''}" data-upgrade="${key}" ${maxed?'disabled':''}>${maxed ? 'Макс.' : '💰 '+price}</button></div>`;
                 }
                 container.innerHTML = html;
                 container.querySelectorAll('.buy-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        audio.playClick(); const key = btn.dataset.upgrade; const def = upgradeDefs[key]; const level = upgrades[key];
+                        audio.playClick();
+                        const key = btn.dataset.upgrade;
+                        const def = upgradeDefs[key];
+                        const level = upgrades[key] || 0;
                         if (level >= def.maxLevel) return;
                         const price = def.priceBase + level * def.priceBase;
                         if (totalResources >= price) {
-                            totalResources -= price; upgrades[key]++; updateAllBalances(); updateHUD();
+                            totalResources -= price;
+                            upgrades[key]++;
+                            updateAllBalances();
+                            updateHUD();
                             spawnParticles(anthill.x, anthill.y, '#ffe090', 15);
-                            if (playerAnt) playerAnt.carryingCapacity = 1 + upgrades.capacity + cabbageUpgrades.backpack;
+                            if (playerAnt) playerAnt.carryingCapacity = 1 + (upgrades.capacity||0) + (cabbageUpgrades.backpack||0);
                             saveGame();
                         }
                     });
@@ -396,27 +502,71 @@
                 const container = document.getElementById('cabbage-shop-items');
                 let html = '<h3 style="color:#f0c060;text-align:center;margin-top:10px;">🥬 Капустные улучшения</h3>';
                 for (const [key, def] of Object.entries(cabbageUpgradeDefs)) {
-                    const level = cabbageUpgrades[key]; const maxed = level >= def.maxLevel;
+                    const level = cabbageUpgrades[key] || 0;
+                    const maxed = level >= def.maxLevel;
                     const priceCabbage = maxed ? 0 : def.priceCabbage + level * def.priceCabbage;
                     html += `<div class="shop-item"><div class="info"><div class="name">${def.name} (ур. ${level}/${def.maxLevel})</div><div class="desc">${def.desc}</div></div><button class="buy-btn ${maxed?'owned':''}" data-cabbage="${key}" ${maxed?'disabled':''}>${maxed ? 'Макс.' : '🥬 '+priceCabbage}</button></div>`;
                 }
                 container.innerHTML = html;
                 container.querySelectorAll('.buy-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        audio.playClick(); const key = btn.dataset.cabbage; const def = cabbageUpgradeDefs[key]; const level = cabbageUpgrades[key];
+                        audio.playClick();
+                        const key = btn.dataset.cabbage;
+                        const def = cabbageUpgradeDefs[key];
+                        const level = cabbageUpgrades[key] || 0;
                         if (level >= def.maxLevel) return;
                         const price = def.priceCabbage + level * def.priceCabbage;
                         if (cabbageCount >= price) {
-                            cabbageCount -= price; cabbageUpgrades[key]++; updateAllBalances(); updateHUD();
+                            cabbageCount -= price;
+                            cabbageUpgrades[key]++;
+                            updateAllBalances();
+                            updateHUD();
                             spawnParticles(anthill.x, anthill.y, '#a0ffa0', 15);
-                            if (playerAnt) playerAnt.carryingCapacity = 1 + upgrades.capacity + cabbageUpgrades.backpack;
+                            if (playerAnt) playerAnt.carryingCapacity = 1 + (upgrades.capacity||0) + (cabbageUpgrades.backpack||0);
+                            saveGame();
+                        }
+                    });
+                });
+            }
+            function renderBetaItems() {
+                const container = document.getElementById('beta-items');
+                let html = '';
+                const betaUpgrades = ['car', 'inventory'];
+                for (const key of betaUpgrades) {
+                    const def = upgradeDefs[key];
+                    const level = upgrades[key] || 0;
+                    const maxed = level >= def.maxLevel;
+                    const price = maxed ? 0 : def.priceBase + level * def.priceBase;
+                    html += `<div class="shop-item"><div class="info"><div class="name">${def.name} (ур. ${level}/${def.maxLevel})</div><div class="desc">${def.desc}</div></div><button class="buy-btn ${maxed?'owned':''}" data-upgrade="${key}" ${maxed?'disabled':''}>${maxed ? 'Макс.' : '💰 '+price}</button></div>`;
+                }
+                container.innerHTML = html;
+                container.querySelectorAll('.buy-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        audio.playClick();
+                        const key = btn.dataset.upgrade;
+                        const def = upgradeDefs[key];
+                        const level = upgrades[key] || 0;
+                        if (level >= def.maxLevel) return;
+                        const price = def.priceBase + level * def.priceBase;
+                        if (totalResources >= price) {
+                            totalResources -= price;
+                            upgrades[key]++;
+                            updateAllBalances();
+                            updateHUD();
+                            spawnParticles(anthill.x, anthill.y, '#ffe090', 15);
+                            if (key === 'inventory') {
+                                if (playerAnt) playerAnt.coinSlots = [0,0,0,0];
+                                inventoryHud.classList.add('visible');
+                            }
+                            if (playerAnt) playerAnt.carryingCapacity = 1 + (upgrades.capacity||0) + (cabbageUpgrades.backpack||0);
                             saveGame();
                         }
                     });
                 });
             }
             function renderSkinGrid() {
-                const grid = document.getElementById('skin-grid'); let html = '';
+                const grid = document.getElementById('skin-grid');
+                let html = '';
                 skinDefs.forEach(skin => {
                     const owned = skin.owned || (skin.unlockLevel && completedLevels[skin.unlockLevel-1]) || (skin.id === 'tr_spice' && sonicSkinUnlocked) || (skin.id === 'gleb176' && glebSkinUnlocked);
                     html += `<div class="skin-card ${skin.equipped?'equipped':''}" data-skin="${skin.id}"><div class="skin-preview" style="background:${skin.color};box-shadow:inset 0 0 10px ${skin.accent};"></div><div class="skin-name">${skin.name}</div><div class="skin-price">${owned ? '✅ Куплен' : (skin.price > 0 ? '💰 '+skin.price : (skin.unlockLevel ? '🔒 Уровень '+skin.unlockLevel : (skin.id==='tr_spice'?'🔒 Sonic EXE': (skin.id==='gleb176'?'🔒 Режим 32gleb176':'???') )))}</div></div>`;
@@ -424,15 +574,94 @@
                 grid.innerHTML = html;
                 grid.querySelectorAll('.skin-card').forEach(card => {
                     card.addEventListener('click', () => {
-                        audio.playClick(); const sid = card.dataset.skin; const skin = skinDefs.find(s => s.id === sid); if (!skin) return;
+                        audio.playClick();
+                        const sid = card.dataset.skin;
+                        const skin = skinDefs.find(s => s.id === sid);
+                        if (!skin) return;
                         const owned = skin.owned || (skin.unlockLevel && completedLevels[skin.unlockLevel-1]) || (skin.id === 'tr_spice' && sonicSkinUnlocked) || (skin.id === 'gleb176' && glebSkinUnlocked);
                         if (owned) {
-                            skinDefs.forEach(s => s.equipped = false); skin.equipped = true; currentSkin = skin;
-                            if (playerAnt) playerAnt.skin = skin; renderSkinGrid();
+                            skinDefs.forEach(s => s.equipped = false);
+                            skin.equipped = true;
+                            currentSkin = skin;
+                            if (playerAnt) playerAnt.skin = skin;
+                            renderSkinGrid();
                         } else if (skin.price > 0 && totalResources >= skin.price) {
-                            totalResources -= skin.price; skin.owned = true;
-                            skinDefs.forEach(s => s.equipped = false); skin.equipped = true; currentSkin = skin;
-                            if (playerAnt) playerAnt.skin = skin; updateAllBalances(); updateHUD();
+                            totalResources -= skin.price;
+                            skin.owned = true;
+                            skinDefs.forEach(s => s.equipped = false);
+                            skin.equipped = true;
+                            currentSkin = skin;
+                            if (playerAnt) playerAnt.skin = skin;
+                            updateAllBalances();
+                            updateHUD();
+                            spawnParticles(anthill.x, anthill.y, '#ffe090', 20);
+                            saveGame();
+                        }
+                    });
+                });
+            }
+            function renderCoinSkinGrid() {
+                const grid = document.getElementById('coin-skin-grid');
+                let html = '';
+                coinSkinDefs.forEach(skin => {
+                    html += `<div class="skin-card ${skin.equipped?'equipped':''}" data-skin="${skin.id}"><div class="skin-preview" style="background:${skin.color};box-shadow:inset 0 0 10px ${skin.accent};"></div><div class="skin-name">${skin.name}</div><div class="skin-price">${skin.owned ? '✅ Куплен' : '🪙 '+skin.price}</div></div>`;
+                });
+                grid.innerHTML = html;
+                grid.querySelectorAll('.skin-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        audio.playClick();
+                        const sid = card.dataset.skin;
+                        const skin = coinSkinDefs.find(s => s.id === sid);
+                        if (!skin) return;
+                        if (skin.owned) {
+                            coinSkinDefs.forEach(s => s.equipped = false);
+                            skin.equipped = true;
+                            currentSkin = skin;
+                            if (playerAnt) playerAnt.skin = skin;
+                            renderCoinSkinGrid();
+                        } else if (silverCoins >= skin.price) {
+                            silverCoins -= skin.price;
+                            skin.owned = true;
+                            coinSkinDefs.forEach(s => s.equipped = false);
+                            skin.equipped = true;
+                            currentSkin = skin;
+                            if (playerAnt) playerAnt.skin = skin;
+                            updateAllBalances();
+                            updateHUD();
+                            spawnParticles(anthill.x, anthill.y, '#ffe090', 20);
+                            saveGame();
+                        }
+                    });
+                });
+            }
+            function renderDiamondSkinGrid() {
+                const grid = document.getElementById('diamond-skin-grid');
+                let html = '';
+                diamondSkinDefs.forEach(skin => {
+                    html += `<div class="skin-card ${skin.equipped?'equipped':''}" data-skin="${skin.id}"><div class="skin-preview" style="background:${skin.color};box-shadow:inset 0 0 10px ${skin.accent};"></div><div class="skin-name">${skin.name}</div><div class="skin-price">${skin.owned ? '✅ Куплен' : '💎 '+skin.price}</div></div>`;
+                });
+                grid.innerHTML = html;
+                grid.querySelectorAll('.skin-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        audio.playClick();
+                        const sid = card.dataset.skin;
+                        const skin = diamondSkinDefs.find(s => s.id === sid);
+                        if (!skin) return;
+                        if (skin.owned) {
+                            diamondSkinDefs.forEach(s => s.equipped = false);
+                            skin.equipped = true;
+                            currentSkin = skin;
+                            if (playerAnt) playerAnt.skin = skin;
+                            renderDiamondSkinGrid();
+                        } else if (diamonds >= skin.price) {
+                            diamonds -= skin.price;
+                            skin.owned = true;
+                            diamondSkinDefs.forEach(s => s.equipped = false);
+                            skin.equipped = true;
+                            currentSkin = skin;
+                            if (playerAnt) playerAnt.skin = skin;
+                            updateAllBalances();
+                            updateHUD();
                             spawnParticles(anthill.x, anthill.y, '#ffe090', 20);
                             saveGame();
                         }
@@ -440,9 +669,11 @@
                 });
             }
             function renderLevelsPanel() {
-                const container = document.getElementById('levels-list'); let html = '';
+                const container = document.getElementById('levels-list');
+                let html = '';
                 for (let i = 0; i < levelsData.length; i++) {
-                    const lvl = levelsData[i]; const completed = completedLevels[i];
+                    const lvl = levelsData[i];
+                    const completed = completedLevels[i];
                     html += `<div class="level-item ${completed ? 'completed' : ''}"><div class="level-num">${i+1}</div><div class="level-info"><div class="level-name">Уровень ${i+1}</div><div class="level-desc">${lvl.desc}</div><div class="level-reward">Награда: ${lvl.rewardResources} ресурсов + скин «${skinDefs.find(s=>s.id===lvl.skinId)?.name}»</div></div><div class="level-status">${completed ? '✅ Пройден' : '❌ Не пройден'}</div></div>`;
                 }
                 container.innerHTML = html;
@@ -451,16 +682,25 @@
             // Кнопки меню
             document.getElementById('btn-play').addEventListener('click', () => { audio.playClick(); startGame(); });
             document.getElementById('btn-shop').addEventListener('click', () => { audio.playClick(); gameState = 'shop'; mainMenu.classList.add('hidden'); closeAllPanels(); shopPanel.classList.add('visible'); updateAllBalances(); });
+            document.getElementById('btn-beta').addEventListener('click', () => { audio.playClick(); gameState = 'beta'; mainMenu.classList.add('hidden'); closeAllPanels(); betaPanel.classList.add('visible'); updateAllBalances(); });
             document.getElementById('btn-skins').addEventListener('click', () => { audio.playClick(); gameState = 'skins'; mainMenu.classList.add('hidden'); closeAllPanels(); skinsPanel.classList.add('visible'); updateAllBalances(); });
+            document.getElementById('btn-coin-skins').addEventListener('click', () => { audio.playClick(); gameState = 'coin-skins'; mainMenu.classList.add('hidden'); closeAllPanels(); coinSkinsPanel.classList.add('visible'); updateAllBalances(); });
+            document.getElementById('btn-diamond-skins').addEventListener('click', () => { audio.playClick(); gameState = 'diamond-skins'; mainMenu.classList.add('hidden'); closeAllPanels(); diamondSkinsPanel.classList.add('visible'); updateAllBalances(); });
             document.getElementById('btn-settings').addEventListener('click', () => { audio.playClick(); gameState = 'settings'; mainMenu.classList.add('hidden'); closeAllPanels(); settingsPanel.classList.add('visible'); updateSettingsUI(); });
             document.getElementById('btn-levels').addEventListener('click', () => { audio.playClick(); gameState = 'levels'; mainMenu.classList.add('hidden'); closeAllPanels(); levelsPanel.classList.add('visible'); renderLevelsPanel(); });
             document.getElementById('close-shop').addEventListener('click', () => { audio.playClick(); shopPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
+            document.getElementById('close-beta').addEventListener('click', () => { audio.playClick(); betaPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('close-skins').addEventListener('click', () => { audio.playClick(); skinsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
+            document.getElementById('close-coin-skins').addEventListener('click', () => { audio.playClick(); coinSkinsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
+            document.getElementById('close-diamond-skins').addEventListener('click', () => { audio.playClick(); diamondSkinsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('close-settings').addEventListener('click', () => { audio.playClick(); settingsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('close-levels').addEventListener('click', () => { audio.playClick(); levelsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('close-map').addEventListener('click', () => { audio.playClick(); mapPanel.classList.remove('visible'); gameState = 'playing'; });
             document.getElementById('shop-back').addEventListener('click', () => { audio.playClick(); shopPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
+            document.getElementById('beta-back').addEventListener('click', () => { audio.playClick(); betaPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('skins-back').addEventListener('click', () => { audio.playClick(); skinsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
+            document.getElementById('coin-skins-back').addEventListener('click', () => { audio.playClick(); coinSkinsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
+            document.getElementById('diamond-skins-back').addEventListener('click', () => { audio.playClick(); diamondSkinsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('settings-back').addEventListener('click', () => { audio.playClick(); settingsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
             document.getElementById('levels-back').addEventListener('click', () => { audio.playClick(); levelsPanel.classList.remove('visible'); gameState = playerAnt ? 'playing' : 'menu'; if (!playerAnt) mainMenu.classList.remove('hidden'); });
 
@@ -555,114 +795,199 @@
                     const holeGrad = ctx.createRadialGradient(sx, sy+3, 2, sx, sy, pulseR*0.35);
                     holeGrad.addColorStop(0,'#0a0500'); holeGrad.addColorStop(1,'#3d2a14');
                     ctx.fillStyle = holeGrad; ctx.beginPath(); ctx.ellipse(sx, sy+2, pulseR*0.32, pulseR*0.22, 0, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                    for(let i=0;i<12;i++){ const a=(i/12)*Math.PI*2+this.pulse*0.3; const d=pulseR*(0.5+Math.sin(i*3.7)*0.35); ctx.beginPath(); ctx.arc(sx+Math.cos(a)*d, sy+Math.sin(a)*d*0.7,2.5,0,Math.PI*2); ctx.fill(); }
                 }
-                containsPoint(wx,wy){ const dx=wx-this.x, dy=wy-this.y; return Math.sqrt(dx*dx+dy*dy)<this.radius+8; }
+                containsPoint(wx, wy) { return Math.hypot(wx-this.x, wy-this.y) < this.radius + 8; }
             }
 
             class Ant {
-                constructor(x,y,isPlayer=false,skin=null){
-                    this.x=x; this.y=y; this.vx=0; this.vy=0; this.angle=Math.random()*Math.PI*2;
-                    this.isPlayer=isPlayer; this.skin=skin||currentSkin;
-                    this.carryingResources = []; this.carryingCapacity = 1 + upgrades.capacity + cabbageUpgrades.backpack;
-                    this.speed=isPlayer?180:70+Math.random()*40; this.wobble=Math.random()*Math.PI*2;
-                    this.wobbleSpeed=2+Math.random()*4; this.wobbleAmp=isPlayer?0.3:1.2;
-                    this.state='idle'; this.targetX=x; this.targetY=y; this.restTimer=0; this.trailTimer=0;
-                    this.stuckTimer=0; this.prevX=x; this.prevY=y;
+                constructor(x, y, isPlayer = false, skin = null) {
+                    this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.angle = Math.random() * Math.PI * 2;
+                    this.isPlayer = isPlayer; this.skin = skin || currentSkin;
+                    this.carryingResources = []; this.carryingCapacity = 1 + (upgrades.capacity||0) + (cabbageUpgrades.backpack||0);
+                    this.speed = isPlayer ? 180 : 70 + Math.random() * 40;
+                    this.wobble = Math.random() * Math.PI * 2; this.wobbleSpeed = 2 + Math.random() * 4;
+                    this.wobbleAmp = isPlayer ? 0.3 : 1.2;
+                    this.state = 'idle'; this.targetX = x; this.targetY = y;
+                    this.restTimer = 0; this.trailTimer = 0; this.stuckTimer = 0;
+                    this.prevX = x; this.prevY = y;
+                    this.coinSlots = isPlayer ? [0,0,0,0] : null;
                 }
-                get carrying() { return this.carryingResources.length > 0 ? this.carryingResources[0] : null; }
-                update(dt){
-                    if(this.isPlayer) this.updatePlayer(dt); else this.updateAI(dt);
-                    const dx=this.x-this.prevX, dy=this.y-this.prevY;
-                    if(Math.sqrt(dx*dx+dy*dy)>3 && this.carryingResources.length > 0 && settings.pheromones){
-                        this.trailTimer-=dt;
-                        if(this.trailTimer<=0){ this.trailTimer=0.08; pheromoneTrails.push({x:this.x,y:this.y,strength:this.isPlayer?0.7:1.0+upgrades.pheromoneStrength*0.3,life:this.isPlayer?8:15+upgrades.pheromoneStrength*5,maxLife:this.isPlayer?8:15+upgrades.pheromoneStrength*5,fromPlayer:this.isPlayer}); }
+                update(dt) {
+                    if (this.isPlayer) this.updatePlayer(dt);
+                    else this.updateAI(dt);
+                    const dx = this.x - this.prevX, dy = this.y - this.prevY;
+                    if (Math.sqrt(dx*dx+dy*dy) > 3 && this.carryingResources.length > 0 && settings.pheromones) {
+                        this.trailTimer -= dt;
+                        if (this.trailTimer <= 0) {
+                            this.trailTimer = 0.08;
+                            pheromoneTrails.push({x: this.x, y: this.y, strength: this.isPlayer ? 0.7 : 1.0 + (upgrades.pheromoneStrength||0)*0.3, life: this.isPlayer ? 8 : 15 + (upgrades.pheromoneStrength||0)*5, maxLife: this.isPlayer ? 8 : 15 + (upgrades.pheromoneStrength||0)*5, fromPlayer: this.isPlayer});
+                        }
                     }
-                    this.prevX=this.x; this.prevY=this.y;
-                    this.x=Math.max(15,Math.min(WORLD_W-15,this.x)); this.y=Math.max(15,Math.min(WORLD_H-15,this.y));
+                    this.prevX = this.x; this.prevY = this.y;
+                    this.x = Math.max(15, Math.min(WORLD_W-15, this.x));
+                    this.y = Math.max(15, Math.min(WORLD_H-15, this.y));
                 }
-                updatePlayer(dt){
-                    const sens=settings.sensitivity/100; let mx=0,my=0;
-                    if(keys['w']||keys['arrowup']||keys['ц']) my=-1;
-                    if(keys['s']||keys['arrowdown']||keys['ы']) my=1;
-                    if(keys['a']||keys['arrowleft']||keys['ф']) mx=-1;
-                    if(keys['d']||keys['arrowright']||keys['в']) mx=1;
-                    if(clickTarget){ const tdx=clickTarget.x-this.x,tdy=clickTarget.y-this.y; const tdist=Math.sqrt(tdx*tdx+tdy*tdy); if(tdist<12) clickTarget=null; else{ const tn=1/tdist; mx+=tdx*tn*0.7; my+=tdy*tn*0.7; } }
-                    const mag=Math.sqrt(mx*mx+my*my); if(mag>1){ mx/=mag; my/=mag; }
-                    const accel=600*sens; const maxSpeed=this.speed*sens*(1+upgrades.speed*0.25 + cabbageUpgrades.sprint*0.15);
-                    this.vx+=mx*accel*dt; this.vy+=my*accel*dt;
-                    const spd=Math.sqrt(this.vx*this.vx+this.vy*this.vy); if(spd>maxSpeed){ const s=maxSpeed/spd; this.vx*=s; this.vy*=s; }
-                    if(mag<0.05&&!clickTarget&&spd<10){ this.vx*=0.8; this.vy*=0.8; }
-                    this.x+=this.vx*dt; this.y+=this.vy*dt; if(spd>15) this.angle=Math.atan2(this.vy,this.vx);
-                    let collectRadius = 22 + cabbageUpgrades.radar * 10;
-                    if(settings.autocollect && this.carryingResources.length < this.carryingCapacity){
-                        for(const res of resources){ if(res.carriedBy) continue; if(Math.hypot(this.x-res.x,this.y-res.y)<collectRadius){ this.pickUp(res); break; } }
+                updatePlayer(dt) {
+                    const sens = settings.sensitivity / 100;
+                    let mx = 0, my = 0;
+                    if (keys['w'] || keys['arrowup'] || keys['ц']) my = -1;
+                    if (keys['s'] || keys['arrowdown'] || keys['ы']) my = 1;
+                    if (keys['a'] || keys['arrowleft'] || keys['ф']) mx = -1;
+                    if (keys['d'] || keys['arrowright'] || keys['в']) mx = 1;
+                    if (clickTarget) {
+                        const tdx = clickTarget.x - this.x, tdy = clickTarget.y - this.y;
+                        const tdist = Math.sqrt(tdx*tdx+tdy*tdy);
+                        if (tdist < 12) clickTarget = null;
+                        else { const tn = 1/tdist; mx += tdx * tn * 0.7; my += tdy * tn * 0.7; }
                     }
-                    if(this.carryingResources.length > 0 && anthill.containsPoint(this.x,this.y)) this.deposit();
-                    if(spd>20 && settings.footsteps && this.carryingResources.length === 0){ audio.footstepTimer-=dt; if(audio.footstepTimer<=0){ audio.footstepTimer=0.25; audio.playFootstep(); } }
+                    const mag = Math.sqrt(mx*mx+my*my);
+                    if (mag > 1) { mx /= mag; my /= mag; }
+                    const accel = 600 * sens;
+                    let maxSpeed = this.speed * sens * (1 + (upgrades.speed||0)*0.25 + (cabbageUpgrades.sprint||0)*0.15);
+                    if (carActive) maxSpeed *= 2;
+                    this.vx += mx * accel * dt; this.vy += my * accel * dt;
+                    const spd = Math.sqrt(this.vx*this.vx+this.vy*this.vy);
+                    if (spd > maxSpeed) { const s = maxSpeed/spd; this.vx *= s; this.vy *= s; }
+                    if (mag < 0.05 && !clickTarget && spd < 10) { this.vx *= 0.8; this.vy *= 0.8; }
+                    this.x += this.vx * dt; this.y += this.vy * dt;
+                    if (spd > 15) this.angle = Math.atan2(this.vy, this.vx);
+                    let collectRadius = 22 + (cabbageUpgrades.radar||0) * 10;
+                    if (settings.autocollect && this.carryingResources.length < this.carryingCapacity) {
+                        for (const res of resources) {
+                            if (res.carriedBy) continue;
+                            if (Math.hypot(this.x-res.x, this.y-res.y) < collectRadius) {
+                                if (res.type === 'coin' && this.coinSlots && upgrades.inventory) {
+                                    const empty = this.coinSlots.indexOf(0);
+                                    if (empty !== -1) {
+                                        this.coinSlots[empty] = 1;
+                                        resources.splice(resources.indexOf(res), 1);
+                                        audio.playPickup();
+                                    }
+                                } else {
+                                    this.pickUp(res);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (this.carryingResources.length > 0 && anthill.containsPoint(this.x, this.y)) this.deposit();
+                    if (this.coinSlots && this.coinSlots.some(s=>s>0) && anthill.containsPoint(this.x, this.y)) {
+                        const deposited = this.coinSlots.reduce((a,b)=>a+b, 0);
+                        silverCoins += deposited;
+                        this.coinSlots = [0,0,0,0];
+                        spawnParticles(anthill.x, anthill.y, '#e0e0e0', 10);
+                        updateHUD();
+                    }
                 }
-                updateAI(dt){
-                    if(this.restTimer>0){ this.restTimer-=dt; this.vx*=0.9; this.vy*=0.9; this.x+=this.vx*dt; this.y+=this.vy*dt; return; }
-                    const spd=this.speed*(1+upgrades.speed*0.2);
-                    if(this.carryingResources.length > 0){
-                        const hdx=anthill.x-this.x,hdy=anthill.y-this.y; const hdist=Math.hypot(hdx,hdy); if(hdist<anthill.radius+5){ this.deposit(); return; }
-                        const hn=1/hdist; this.vx+=hdx*hn*300*dt; this.vy+=hdy*hn*300*dt; this.followPheromones(dt,false);
+                updateAI(dt) {
+                    if (this.restTimer > 0) { this.restTimer -= dt; this.vx *= 0.9; this.vy *= 0.9; this.x += this.vx*dt; this.y += this.vy*dt; return; }
+                    const spd = this.speed * (1 + (upgrades.speed||0)*0.2);
+                    if (this.carryingResources.length > 0) {
+                        const hdx = anthill.x - this.x, hdy = anthill.y - this.y;
+                        if (Math.hypot(hdx, hdy) < anthill.radius + 5) { this.deposit(); return; }
+                        this.vx += hdx/Math.hypot(hdx,hdy) * 300 * dt;
+                        this.vy += hdy/Math.hypot(hdx,hdy) * 300 * dt;
                     } else {
-                        this.wobble+=this.wobbleSpeed*dt; const wx=Math.cos(this.wobble)*this.wobbleAmp, wy=Math.sin(this.wobble*1.4)*this.wobbleAmp;
-                        this.vx+=wx*40*dt; this.vy+=wy*40*dt; this.followPheromones(dt,true);
-                        if(this.carryingResources.length < this.carryingCapacity){ for(const res of resources){ if(res.carriedBy) continue; if(Math.hypot(this.x-res.x,this.y-res.y)<24){ this.pickUp(res); break; } } }
+                        this.wobble += this.wobbleSpeed * dt;
+                        this.vx += Math.cos(this.wobble) * this.wobbleAmp * 40 * dt;
+                        this.vy += Math.sin(this.wobble*1.4) * this.wobbleAmp * 40 * dt;
+                        for (const res of resources) {
+                            if (res.carriedBy) continue;
+                            if (Math.hypot(this.x-res.x, this.y-res.y) < 24) { this.pickUp(res); break; }
+                        }
                     }
-                    const curSpd=Math.hypot(this.vx,this.vy); if(curSpd>spd){ const s=spd/curSpd; this.vx*=s; this.vy*=s; }
-                    if(curSpd<spd*0.3&&this.carryingResources.length===0){ this.vx+=(Math.random()-0.5)*200*dt; this.vy+=(Math.random()-0.5)*200*dt; }
-                    this.x+=this.vx*dt; this.y+=this.vy*dt; if(curSpd>8) this.angle=Math.atan2(this.vy,this.vx);
-                    if(this.x<20||this.x>WORLD_W-20||this.y<20||this.y>WORLD_H-20){ this.vx+=(anthill.x-this.x)*0.5*dt; this.vy+=(anthill.y-this.y)*0.5*dt; }
-                    this.stuckTimer-=dt; if(curSpd<3&&this.carryingResources.length===0&&this.stuckTimer<=0){ this.stuckTimer=3; this.vx+=(Math.random()-0.5)*300; this.vy+=(Math.random()-0.5)*300; }
+                    const curSpd = Math.hypot(this.vx, this.vy);
+                    if (curSpd > spd) { const s = spd/curSpd; this.vx *= s; this.vy *= s; }
+                    if (curSpd < 3 && this.carryingResources.length === 0) { this.vx += (Math.random()-0.5)*200*dt; this.vy += (Math.random()-0.5)*200*dt; }
+                    this.x += this.vx * dt; this.y += this.vy * dt;
+                    if (curSpd > 8) this.angle = Math.atan2(this.vy, this.vx);
+                    if (this.x < 20 || this.x > WORLD_W-20 || this.y < 20 || this.y > WORLD_H-20) { this.vx += (anthill.x-this.x)*0.5*dt; this.vy += (anthill.y-this.y)*0.5*dt; }
                 }
-                followPheromones(dt,seeking){
-                    if(!settings.pheromones) return; let bestStr=0,bestX=0,bestY=0;
-                    for(const trail of pheromoneTrails){ const td=Math.hypot(this.x-trail.x,this.y-trail.y); if(td<60&&trail.strength>bestStr){ bestStr=trail.strength; bestX=trail.x; bestY=trail.y; } }
-                    if(bestStr>0.05){ const bdx=bestX-this.x,bdy=bestY-this.y; const bd=Math.hypot(bdx,bdy)||1; const factor=seeking?1:-0.5; this.vx+=(bdx/bd)*bestStr*80*factor*dt; this.vy+=(bdy/bd)*bestStr*80*factor*dt; }
+                pickUp(res) {
+                    if (this.carryingResources.length >= this.carryingCapacity) return;
+                    this.carryingResources.push(res);
+                    res.carriedBy = this;
+                    res.x = this.x; res.y = this.y;
+                    if (this.isPlayer) audio.playPickup();
                 }
-                pickUp(res){ if(this.carryingResources.length >= this.carryingCapacity) return; this.carryingResources.push(res); res.carriedBy = this; res.x = this.x; res.y = this.y; if(this.isPlayer) audio.playPickup(); }
-                deposit(){
-                    if(this.carryingResources.length === 0) return; let totalVal = 0; let cabbages = 0;
-                    for(const res of this.carryingResources){
+                deposit() {
+                    if (this.carryingResources.length === 0) return;
+                    let totalVal = 0, cabbages = 0, newCoins = 0, newDiamonds = 0;
+                    for (const res of this.carryingResources) {
                         if (res.type === 'cabbage') cabbages++;
-                        totalVal += res.value; res.carriedBy = null; const idx = resources.indexOf(res); if(idx>=0) resources.splice(idx,1);
+                        if (res.type === 'coin') newCoins++;
+                        if (res.type === 'diamond') newDiamonds++;
+                        totalVal += res.value;
+                        res.carriedBy = null;
+                        const idx = resources.indexOf(res);
+                        if (idx >= 0) resources.splice(idx, 1);
                     }
-                    totalResources += totalVal; scorePoints += totalVal; cabbageCount += cabbages; antSpawnCounter += totalVal;
-                    this.carryingResources = []; this.restTimer = 0.3+Math.random()*0.4; this.vx *= 0.3; this.vy *= 0.3;
-                    spawnParticles(anthill.x,anthill.y,cabbages>0?'#90ff90':'#ffe090',10+totalVal*4);
-                    if(this.isPlayer) audio.playDeposit();
-                    while(antSpawnCounter>=antSpawnThreshold){ antSpawnCounter-=antSpawnThreshold; spawnNewAnt(); antSpawnThreshold=Math.floor(antSpawnThreshold*1.2)+1; }
-                    updateHUD(); checkLevelCompletion(); saveGame();
+                    totalResources += totalVal;
+                    scorePoints += totalVal;
+                    cabbageCount += cabbages;
+                    silverCoins += newCoins;
+                    diamonds += newDiamonds;
+                    antSpawnCounter += totalVal;
+                    this.carryingResources = [];
+                    this.restTimer = 0.3 + Math.random()*0.4;
+                    this.vx *= 0.3; this.vy *= 0.3;
+                    spawnParticles(anthill.x, anthill.y, (cabbages>0||newCoins>0||newDiamonds>0)?'#c0c0c0':'#ffe090', 10+totalVal*4);
+                    if (this.isPlayer) audio.playDeposit();
+                    while (antSpawnCounter >= antSpawnThreshold) {
+                        antSpawnCounter -= antSpawnThreshold;
+                        spawnNewAnt();
+                        antSpawnThreshold = Math.floor(antSpawnThreshold*1.2) + 1;
+                    }
+                    updateHUD();
+                    checkLevelCompletion();
+                    saveGame();
                 }
-                draw(ctx,cam){
-                    const sx=this.x-cam.x, sy=this.y-cam.y; const size=this.isPlayer?13:9;
-                    ctx.save(); ctx.translate(sx,sy); ctx.rotate(this.angle);
-                    const skin=this.skin||currentSkin; let bodyColor=skin.color, accentColor=skin.accent;
-                    if(skin.rainbow){ const hue=(Date.now()/800+this.x*0.5)%360; bodyColor=`hsl(${hue},80%,45%)`; accentColor=`hsl(${hue+30},90%,30%)`; }
-                    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(2,3,size*0.9,size*0.5,0,0,Math.PI*2); ctx.fill();
-                    ctx.fillStyle=bodyColor; ctx.beginPath(); ctx.ellipse(-size*0.55,0,size*0.55,size*0.38,0,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=accentColor; ctx.lineWidth=1; ctx.stroke();
-                    ctx.fillStyle=bodyColor; ctx.beginPath(); ctx.ellipse(size*0.05,0,size*0.32,size*0.26,0,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=accentColor; ctx.stroke();
-                    ctx.fillStyle=accentColor; ctx.beginPath(); ctx.arc(size*0.5,0,size*0.28,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=bodyColor; ctx.lineWidth=0.7; ctx.stroke();
-                    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(size*0.58,-size*0.1,size*0.09,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(size*0.58,size*0.1,size*0.09,0,Math.PI*2); ctx.fill();
-                    ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(size*0.6,-size*0.1,size*0.04,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(size*0.6,size*0.1,size*0.04,0,Math.PI*2); ctx.fill();
-                    ctx.strokeStyle=accentColor; ctx.lineWidth=1;
-                    ctx.beginPath(); ctx.moveTo(size*0.65,-size*0.08); ctx.quadraticCurveTo(size*1.0,-size*0.45,size*1.1,-size*0.55); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(size*0.65,size*0.08); ctx.quadraticCurveTo(size*1.0,size*0.45,size*1.1,size*0.55); ctx.stroke();
-                    ctx.strokeStyle=accentColor; ctx.lineWidth=0.8;
-                    for(let side=-1;side<=1;side+=2){ for(let l=0;l<3;l++){ const lx=size*(-0.25+l*0.28); ctx.beginPath(); ctx.moveTo(lx,side*size*0.2); ctx.lineTo(lx+side*size*0.15,side*size*0.55); ctx.lineTo(lx+side*size*0.35,side*size*0.7); ctx.stroke(); } }
-                    if(this.carryingResources.length > 0){
-                        const count = this.carryingResources.length; const res = this.carryingResources[0]; ctx.fillStyle=res.color; const rx=size*0.2, ry=-size*0.55;
+                draw(ctx, cam) {
+                    const sx = this.x - cam.x, sy = this.y - cam.y;
+                    const size = this.isPlayer ? 13 : 9;
+                    ctx.save(); ctx.translate(sx, sy); ctx.rotate(this.angle);
+                    const skin = this.skin || currentSkin;
+                    let bodyColor = skin.color, accentColor = skin.accent;
+                    if (skin.rainbow) {
+                        const hue = (Date.now()/800 + this.x*0.5) % 360;
+                        bodyColor = `hsl(${hue},80%,45%)`;
+                        accentColor = `hsl(${hue+30},90%,30%)`;
+                    }
+                    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(2, 3, size*0.9, size*0.5, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = bodyColor; ctx.beginPath(); ctx.ellipse(-size*0.55, 0, size*0.55, size*0.38, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = accentColor; ctx.lineWidth = 1; ctx.stroke();
+                    ctx.fillStyle = bodyColor; ctx.beginPath(); ctx.ellipse(size*0.05, 0, size*0.32, size*0.26, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = accentColor; ctx.stroke();
+                    ctx.fillStyle = accentColor; ctx.beginPath(); ctx.arc(size*0.5, 0, size*0.28, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = bodyColor; ctx.lineWidth = 0.7; ctx.stroke();
+                    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(size*0.58, -size*0.1, size*0.09, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(size*0.58, size*0.1, size*0.09, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(size*0.6, -size*0.1, size*0.04, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(size*0.6, size*0.1, size*0.04, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = accentColor; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(size*0.65, -size*0.08); ctx.quadraticCurveTo(size*1.0, -size*0.45, size*1.1, -size*0.55); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(size*0.65, size*0.08); ctx.quadraticCurveTo(size*1.0, size*0.45, size*1.1, size*0.55); ctx.stroke();
+                    ctx.strokeStyle = accentColor; ctx.lineWidth = 0.8;
+                    for (let side = -1; side <= 1; side += 2) {
+                        for (let l = 0; l < 3; l++) {
+                            const lx = size * (-0.25 + l*0.28);
+                            ctx.beginPath(); ctx.moveTo(lx, side*size*0.2); ctx.lineTo(lx+side*size*0.15, side*size*0.55); ctx.lineTo(lx+side*size*0.35, side*size*0.7); ctx.stroke();
+                        }
+                    }
+                    if (this.carryingResources.length > 0) {
+                        const res = this.carryingResources[0];
+                        ctx.fillStyle = res.color;
+                        const rx = size*0.2, ry = -size*0.55;
                         ctx.beginPath();
-                        if(res.type==='mushroom'){ ctx.arc(rx,ry,size*0.35,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(rx-size*0.08,ry-size*0.12,size*0.08,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(rx+size*0.1,ry+size*0.05,size*0.06,0,Math.PI*2); ctx.fill(); }
-                        else if(res.type==='leaf'){ ctx.ellipse(rx,ry,size*0.35,size*0.2,0.3,0,Math.PI*2); ctx.fill(); }
-                        else if(res.type==='crystal'){ ctx.save(); ctx.translate(rx,ry); ctx.rotate(Math.PI/4); ctx.fillRect(-size*0.2,-size*0.2,size*0.4,size*0.4); ctx.restore(); }
-                        else if(res.type==='cabbage'){ ctx.fillStyle='#a0d860'; ctx.beginPath(); ctx.arc(rx,ry,size*0.35,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#7cba3c'; for(let i=0;i<5;i++){ const ang = i*Math.PI*2/5; ctx.beginPath(); ctx.ellipse(rx+Math.cos(ang)*size*0.2, ry+Math.sin(ang)*size*0.2, size*0.25, size*0.12, ang, 0, Math.PI*2); ctx.fill(); } }
-                        else { ctx.arc(rx,ry,size*0.28,0,Math.PI*2); ctx.fill(); }
-                        if(count > 1){ ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'center'; ctx.fillText('x'+count, rx, ry - size*0.6); }
+                        if (res.type === 'mushroom') ctx.arc(rx, ry, size*0.35, 0, Math.PI*2);
+                        else if (res.type === 'leaf') ctx.ellipse(rx, ry, size*0.35, size*0.2, 0.3, 0, Math.PI*2);
+                        else if (res.type === 'crystal') { ctx.save(); ctx.translate(rx, ry); ctx.rotate(Math.PI/4); ctx.fillRect(-size*0.2, -size*0.2, size*0.4, size*0.4); ctx.restore(); }
+                        else ctx.arc(rx, ry, size*0.28, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                    if (carActive && this.isPlayer) {
+                        ctx.strokeStyle = '#ffaa00'; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.arc(0, 0, size*1.4, 0, Math.PI*2); ctx.stroke();
                     }
                     if (skin.nickname && this.isPlayer) {
                         ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Segoe UI'; ctx.textAlign = 'center';
@@ -673,20 +998,36 @@
             }
 
             class Resource {
-                constructor(x,y,type){
-                    this.x=x; this.y=y; this.type=type; this.carriedBy=null; this.bobOffset=Math.random()*Math.PI*2; this.scale=0.8+Math.random()*0.4;
-                    switch(type){ case'mushroom':this.value=1;this.color='#c4845a';this.particleColor='#e8c8a0';break; case'leaf':this.value=2;this.color='#6db84a';this.particleColor='#a0e870';break; case'crystal':this.value=3;this.color='#a0d8f0';this.particleColor='#d0f0ff';break; case'berry':this.value=2;this.color='#e04050';this.particleColor='#ff8090';break; case'cabbage':this.value=5;this.color='#8cc04a';this.particleColor='#c0f090';break; default:this.value=1;this.color='#aaa';this.particleColor='#ddd'; }
+                constructor(x, y, type) {
+                    this.x = x; this.y = y; this.type = type; this.carriedBy = null;
+                    this.bobOffset = Math.random() * Math.PI * 2;
+                    this.scale = 0.8 + Math.random() * 0.4;
+                    switch(type) {
+                        case 'mushroom': this.value = 1; this.color = '#c4845a'; this.particleColor = '#e8c8a0'; break;
+                        case 'leaf': this.value = 2; this.color = '#6db84a'; this.particleColor = '#a0e870'; break;
+                        case 'crystal': this.value = 3; this.color = '#a0d8f0'; this.particleColor = '#d0f0ff'; break;
+                        case 'berry': this.value = 2; this.color = '#e04050'; this.particleColor = '#ff8090'; break;
+                        case 'cabbage': this.value = 5; this.color = '#8cc04a'; this.particleColor = '#c0f090'; break;
+                        case 'coin': this.value = 0; this.color = '#e0e0e0'; this.particleColor = '#f0f0f0'; break;
+                        case 'diamond': this.value = 0; this.color = '#b9f2ff'; this.particleColor = '#e0f0ff'; break;
+                        default: this.value = 1; this.color = '#aaa'; this.particleColor = '#ddd';
+                    }
                 }
-                update(dt){ if(this.carriedBy){ this.x=this.carriedBy.x; this.y=this.carriedBy.y; } this.bobOffset+=dt*2; }
-                draw(ctx,cam){
-                    if(this.carriedBy) return; const sx=this.x-cam.x, sy=this.y-cam.y+Math.sin(this.bobOffset)*2; const s=this.scale;
-                    ctx.save(); ctx.translate(sx,sy); ctx.scale(s,s);
-                    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0,6,10,4,0,0,Math.PI*2); ctx.fill();
-                    if(this.type==='mushroom'){ ctx.fillStyle='#e8d8c0'; ctx.fillRect(-3,-2,6,10); ctx.fillStyle='#c4845a'; ctx.beginPath(); ctx.arc(0,-4,11,Math.PI,0); ctx.fill(); ctx.fillStyle='#a0683a'; ctx.beginPath(); ctx.arc(0,-4,11,0,Math.PI); ctx.fill(); ctx.fillStyle='#f8f0e8'; ctx.beginPath(); ctx.arc(-4,-7,2.5,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(4,-5,2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(0,-9,2.2,0,Math.PI*2); ctx.fill(); }
-                    else if(this.type==='leaf'){ ctx.fillStyle='#6db84a'; ctx.beginPath(); ctx.ellipse(0,0,9,5,0.4,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#3a7020'; ctx.lineWidth=1; ctx.stroke(); ctx.beginPath(); ctx.moveTo(-4,-1); ctx.lineTo(5,0); ctx.strokeStyle='#4a8a2a'; ctx.stroke(); }
-                    else if(this.type==='crystal'){ ctx.fillStyle='#c8e8f8'; ctx.save(); ctx.rotate(Math.PI/4); ctx.fillRect(-6,-6,12,12); ctx.restore(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#80b0d0'; ctx.lineWidth=1; ctx.save(); ctx.rotate(Math.PI/4); ctx.strokeRect(-6,-6,12,12); ctx.restore(); }
-                    else if(this.type==='berry'){ const berryGrad=ctx.createRadialGradient(-2,-3,2,0,0,8); berryGrad.addColorStop(0,'#ff6060'); berryGrad.addColorStop(1,'#a02030'); ctx.fillStyle=berryGrad; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-2,-3,2,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#5a9a30'; ctx.beginPath(); ctx.ellipse(0,-7,3,1.5,0,0,Math.PI*2); ctx.fill(); }
-                    else if(this.type==='cabbage'){ ctx.fillStyle='#a0d860'; ctx.beginPath(); ctx.arc(0,0,9,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#7cba3c'; for(let i=0;i<5;i++){ const ang = i*Math.PI*2/5; ctx.beginPath(); ctx.ellipse(Math.cos(ang)*5, Math.sin(ang)*5, 6, 3, ang, 0, Math.PI*2); ctx.fill(); } }
+                update(dt) {
+                    if (this.carriedBy) { this.x = this.carriedBy.x; this.y = this.carriedBy.y; }
+                    this.bobOffset += dt * 2;
+                }
+                draw(ctx, cam) {
+                    if (this.carriedBy) return;
+                    const sx = this.x - cam.x, sy = this.y - cam.y + Math.sin(this.bobOffset)*2, s = this.scale;
+                    ctx.save(); ctx.translate(sx, sy); ctx.scale(s, s);
+                    ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0, 6, 10, 4, 0, 0, Math.PI*2); ctx.fill();
+                    if (this.type === 'mushroom') { ctx.fillStyle = '#e8d8c0'; ctx.fillRect(-3,-2,6,10); ctx.fillStyle = '#c4845a'; ctx.beginPath(); ctx.arc(0,-4,11,Math.PI,0); ctx.fill(); }
+                    else if (this.type === 'leaf') { ctx.fillStyle = '#6db84a'; ctx.beginPath(); ctx.ellipse(0,0,9,5,0.4,0,Math.PI*2); ctx.fill(); }
+                    else if (this.type === 'crystal') { ctx.fillStyle = '#c8e8f8'; ctx.save(); ctx.rotate(Math.PI/4); ctx.fillRect(-6,-6,12,12); ctx.restore(); }
+                    else if (this.type === 'coin') { ctx.fillStyle = '#c0c0c0'; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle = '#e0e0e0'; ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('🪙',0,3); }
+                    else if (this.type === 'diamond') { ctx.fillStyle = '#b9f2ff'; ctx.save(); ctx.rotate(Math.PI/4); ctx.fillRect(-5,-5,10,10); ctx.restore(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill(); }
+                    else if (this.type === 'berry') { const grad = ctx.createRadialGradient(-2,-3,2,0,0,8); grad.addColorStop(0,'#ff6060'); grad.addColorStop(1,'#a02030'); ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill(); }
                     ctx.restore();
                 }
             }
@@ -695,7 +1036,7 @@
                 constructor(x, y, target) { this.x = x; this.y = y; this.target = target; this.speed = 450; this.angle = 0; }
                 update(dt) {
                     if (!this.target) return;
-                    const dx = this.target.x - this.x, dy = this.target.y - this.y, d = Math.hypot(dx,dy)||1;
+                    const dx = this.target.x - this.x, dy = this.target.y - this.y, d = Math.hypot(dx,dy) || 1;
                     this.x += (dx/d) * Math.min(this.speed*dt, d);
                     this.y += (dy/d) * Math.min(this.speed*dt, d);
                     this.angle = Math.atan2(dy, dx);
@@ -712,102 +1053,80 @@
             }
 
             class GlebAnt {
-                constructor(x, y, target) {
-                    this.x = x; this.y = y; this.target = target; this.speed = 400; this.angle = 0;
-                }
+                constructor(x, y, target) { this.x = x; this.y = y; this.target = target; this.speed = 400; this.angle = 0; }
                 update(dt) {
                     if (!this.target) return;
-                    const dx = this.target.x - this.x, dy = this.target.y - this.y, d = Math.hypot(dx, dy) || 1;
-                    this.x += (dx/d) * Math.min(this.speed * dt, d);
-                    this.y += (dy/d) * Math.min(this.speed * dt, d);
+                    const dx = this.target.x - this.x, dy = this.target.y - this.y, d = Math.hypot(dx,dy) || 1;
+                    this.x += (dx/d) * Math.min(this.speed*dt, d);
+                    this.y += (dy/d) * Math.min(this.speed*dt, d);
                     this.angle = Math.atan2(dy, dx);
                 }
                 draw(ctx, cam) {
                     const sx = this.x - cam.x, sy = this.y - cam.y;
                     ctx.save(); ctx.translate(sx, sy); ctx.rotate(this.angle);
-                    const hue = (Date.now() / 400) % 360;
-                    const bodyColor = `hsl(${hue},80%,50%)`;
-                    const accentColor = `hsl(${hue+30},90%,35%)`;
-                    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(2,4,11,6,0,0,Math.PI*2); ctx.fill();
-                    ctx.fillStyle = bodyColor; ctx.beginPath(); ctx.ellipse(-8,0,8,5.5,0,0,Math.PI*2); ctx.fill(); ctx.strokeStyle = accentColor; ctx.lineWidth = 1.2; ctx.stroke();
-                    ctx.fillStyle = bodyColor; ctx.beginPath(); ctx.ellipse(1,0,5.5,4.5,0,0,Math.PI*2); ctx.fill(); ctx.strokeStyle = accentColor; ctx.stroke();
-                    ctx.fillStyle = accentColor; ctx.beginPath(); ctx.arc(9,0,4.5,0,Math.PI*2); ctx.fill(); ctx.strokeStyle = bodyColor; ctx.lineWidth = 0.8; ctx.stroke();
+                    const hue = (Date.now()/400) % 360;
+                    const body = `hsl(${hue},80%,50%)`, accent = `hsl(${hue+30},90%,35%)`;
+                    ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(-8,0,8,5.5,0,0,Math.PI*2); ctx.fill();
+                    ctx.fillStyle = accent; ctx.beginPath(); ctx.arc(9,0,4.5,0,Math.PI*2); ctx.fill();
                     ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(10,-1.8,1.6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(10,1.8,1.6,0,Math.PI*2); ctx.fill();
-                    ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(10.5,-1.8,0.7,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(10.5,1.8,0.7,0,Math.PI*2); ctx.fill();
-                    ctx.strokeStyle = accentColor; ctx.lineWidth = 0.8;
-                    ctx.beginPath(); ctx.moveTo(11,-1.2); ctx.quadraticCurveTo(17,-7,19,-9); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(11,1.2); ctx.quadraticCurveTo(17,7,19,9); ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Segoe UI, Arial'; ctx.textAlign = 'center';
-                    ctx.fillText('32gleb176', 0, -14);
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Segoe UI'; ctx.textAlign = 'center'; ctx.fillText('32gleb176', 0, -14);
                     ctx.restore();
                 }
             }
 
-            function spawnParticles(x,y,color,count){ if(!settings.particles) return; for(let i=0;i<count;i++){ const a=Math.random()*Math.PI*2; particles.push({x,y,vx:Math.cos(a)*(40+Math.random()*120),vy:Math.sin(a)*(40+Math.random()*120)-20,life:0.5+Math.random()*1.2,maxLife:0.5+Math.random()*1.2,color,size:1.5+Math.random()*3.5}); } }
-            function updateParticles(dt){ for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=60*dt; p.life-=dt; if(p.life<=0) particles.splice(i,1); } }
-            function drawParticles(ctx,cam){ for(const p of particles){ const alpha=p.life/p.maxLife; ctx.globalAlpha=alpha; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x-cam.x,p.y-cam.y,p.size*alpha,0,Math.PI*2); ctx.fill(); } ctx.globalAlpha=1; }
-            function spawnNewAnt(){
-                const a=Math.random()*Math.PI*2; const d=anthill.radius+15;
-                const ant=new Ant(anthill.x+Math.cos(a)*d,anthill.y+Math.sin(a)*d,false,currentSkin);
-                ant.carryingCapacity = 1 + upgrades.capacity + cabbageUpgrades.backpack;
-                aiAnts.push(ant); updateHUD(); spawnParticles(ant.x,ant.y,'#ffe8c0',8); audio.playSpawn(); checkLevelCompletion();
-            }
-            function spawnResources(count){ for(let i=0;i<count;i++){ const types=['mushroom','mushroom','mushroom','leaf','leaf','crystal','berry','cabbage']; const type=types[Math.floor(Math.random()*types.length)]; let rx,ry; do{ rx=60+Math.random()*(WORLD_W-120); ry=60+Math.random()*(WORLD_H-120); } while(Math.hypot(rx-anthill.x,ry-anthill.y)<100); resources.push(new Resource(rx,ry,type)); } }
-            function checkLevelCompletion() {
-                if (!anthill) return;
-                const currentRes = totalResources, currentAnts = aiAnts.length + 1;
-                for (let i = 0; i < levelsData.length; i++) {
-                    if (completedLevels[i]) continue;
-                    const lvl = levelsData[i];
-                    if (currentRes >= lvl.targetResources && currentAnts >= lvl.targetAnts) {
-                        completedLevels[i] = true;
-                        totalResources += lvl.rewardResources;
-                        const skin = skinDefs.find(s => s.id === lvl.skinId);
-                        if (skin) skin.owned = true;
-                        updateAllBalances();
-                        updateHUD();
-                        spawnParticles(anthill.x, anthill.y, '#ffd700', 30);
-                        saveGame();
-                        break;
-                    }
-                }
-            }
-            function startGame(){
-                mainMenu.classList.add('hidden'); closeAllPanels(); gameState='playing'; minimapHint.style.opacity='0.8';
-                anthill=new Anthill(WORLD_W/2,WORLD_H/2); resources=[]; pheromoneTrails=[]; particles=[]; aiAnts=[]; antSpawnCounter=0; antSpawnThreshold=5;
-                totalResources=Math.max(totalResources,0); scorePoints=0; cabbageCount=Math.max(cabbageCount,0); clickTarget=null;
+            function spawnParticles(x, y, color, count) { if (!settings.particles) return; for (let i=0;i<count;i++) particles.push({x,y,vx:Math.cos(Math.random()*Math.PI*2)*(40+Math.random()*120),vy:Math.sin(Math.random()*Math.PI*2)*(40+Math.random()*120)-20,life:0.5+Math.random()*1.2,maxLife:0.5+Math.random()*1.2,color,size:1.5+Math.random()*3.5}); }
+            function updateParticles(dt) { for (let i=particles.length-1;i>=0;i--) { const p = particles[i]; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 60*dt; p.life -= dt; if (p.life <= 0) particles.splice(i,1); } }
+            function drawParticles(ctx, cam) { for (const p of particles) { ctx.globalAlpha = p.life/p.maxLife; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x-cam.x, p.y-cam.y, p.size*p.life/p.maxLife, 0, Math.PI*2); ctx.fill(); } ctx.globalAlpha = 1; }
+            function spawnNewAnt() { const a = Math.random()*Math.PI*2, d = anthill.radius+15; const ant = new Ant(anthill.x+Math.cos(a)*d, anthill.y+Math.sin(a)*d, false, currentSkin); ant.carryingCapacity = 1 + (upgrades.capacity||0) + (cabbageUpgrades.backpack||0); aiAnts.push(ant); updateHUD(); spawnParticles(ant.x, ant.y, '#ffe8c0', 8); audio.playSpawn(); checkLevelCompletion(); }
+            function spawnResources(count) { for (let i=0;i<count;i++) { const types = ['mushroom','mushroom','mushroom','leaf','leaf','crystal','berry','cabbage']; resources.push(new Resource(60+Math.random()*(WORLD_W-120), 60+Math.random()*(WORLD_H-120), types[Math.floor(Math.random()*types.length)])); } }
+            function checkLevelCompletion() { if (!anthill) return; const curRes = totalResources, curAnts = aiAnts.length+1; for (let i=0;i<levelsData.length;i++) { if (completedLevels[i]) continue; const lvl = levelsData[i]; if (curRes >= lvl.targetResources && curAnts >= lvl.targetAnts) { completedLevels[i] = true; totalResources += lvl.rewardResources; const skin = skinDefs.find(s=>s.id===lvl.skinId); if (skin) skin.owned = true; updateAllBalances(); updateHUD(); spawnParticles(anthill.x, anthill.y, '#ffd700', 30); saveGame(); break; } } }
+
+            function startGame() {
+                mainMenu.classList.add('hidden'); closeAllPanels(); gameState = 'playing'; minimapHint.style.opacity = '0.8';
+                anthill = new Anthill(WORLD_W/2, WORLD_H/2); resources = []; pheromoneTrails = []; particles = []; aiAnts = []; antSpawnCounter = 0; antSpawnThreshold = 5;
+                totalResources = Math.max(totalResources, 0); scorePoints = 0; cabbageCount = Math.max(cabbageCount, 0); silverCoins = Math.max(silverCoins, 0); diamonds = Math.max(diamonds, 0); clickTarget = null;
                 playerAnt = new Ant(anthill.x+50, anthill.y+30, true, currentSkin);
-                playerAnt.carryingCapacity = 1 + upgrades.capacity + cabbageUpgrades.backpack;
-                spawnResources(35); for(let i=0;i<3;i++) spawnNewAnt(); antSpawnCounter=0;
-                camera.x = playerAnt.x - canvas.width/2; camera.y = playerAnt.y - canvas.height/2;
-                camera.targetX = camera.x; camera.targetY = camera.y;
-                updateHUD(); updateAllBalances();
-                audio.init();
-                if (settings.sonicMode) {
-                    sonicAnt = new SonicAnt(playerAnt.x + 200, playerAnt.y - 100, playerAnt);
-                    sonicSurvivalTimer = 0;
-                    audio.setSonicMusic(true);
-                } else {
-                    sonicAnt = null;
-                    audio.setMusicOn(settings.music);
-                }
-                if (settings.glebMode) {
-                    glebAnt = new GlebAnt(playerAnt.x + 200, playerAnt.y - 100, playerAnt);
-                    glebSurvivalTimer = 0;
-                } else {
-                    glebAnt = null;
-                    glebSurvivalTimer = 0;
-                }
+                playerAnt.carryingCapacity = 1 + (upgrades.capacity||0) + (cabbageUpgrades.backpack||0);
+                if (upgrades.inventory) playerAnt.coinSlots = [0,0,0,0];
+                inventoryHud.classList.toggle('visible', upgrades.inventory > 0);
+                spawnResources(35); for (let i=0;i<3;i++) spawnNewAnt(); antSpawnCounter = 0;
+                camera.x = playerAnt.x - canvas.width/2; camera.y = playerAnt.y - canvas.height/2; camera.targetX = camera.x; camera.targetY = camera.y;
+                updateHUD(); updateAllBalances(); audio.init(); carActive = false; carTimer = 0; carCooldownRemaining = 0;
+                if (settings.sonicMode) { sonicAnt = new SonicAnt(playerAnt.x+200, playerAnt.y-100, playerAnt); sonicSurvivalTimer = 0; audio.setSonicMusic(true); } else { sonicAnt = null; audio.setMusicOn(settings.music); }
+                if (settings.glebMode) { glebAnt = new GlebAnt(playerAnt.x+200, playerAnt.y-100, playerAnt); glebSurvivalTimer = 0; } else { glebAnt = null; glebSurvivalTimer = 0; }
                 audio.setMute(!settings.sound); audio.setFootsteps(settings.footsteps);
             }
-            function updateHUD(){ hudResources.textContent=totalResources; hudAnts.textContent=aiAnts.length+1; hudScore.textContent=scorePoints; hudCabbage.textContent=cabbageCount; }
+            function updateHUD() {
+                hudResources.textContent = totalResources;
+                hudAnts.textContent = aiAnts.length + 1;
+                hudScore.textContent = scorePoints;
+                hudCabbage.textContent = cabbageCount;
+                hudCoins.textContent = silverCoins;
+                hudDiamonds.textContent = diamonds;
+                updateInventoryHUD();
+                updateCarHUD();
+            }
+            function updateInventoryHUD() {
+                if (!playerAnt || !upgrades.inventory) return;
+                for (let i=0;i<4;i++) {
+                    const slot = document.getElementById(`inv-slot-${i}`);
+                    if (slot) slot.querySelector('.coin-stack').textContent = playerAnt.coinSlots[i] > 0 ? '1' : '0';
+                }
+            }
+            function updateCarHUD() {
+                if (carActive) { carStatusDiv.classList.add('visible'); carTimerSpan.textContent = carTimer.toFixed(1); carCooldownSpan.textContent = ''; }
+                else if (carCooldownRemaining > 0) { carStatusDiv.classList.add('visible'); carTimerSpan.textContent = 'Готов'; carCooldownSpan.textContent = carCooldownRemaining.toFixed(1); }
+                else { carStatusDiv.classList.remove('visible'); }
+            }
 
             function saveGame() {
                 try {
                     const saveData = {
-                        completedLevels, totalResources, scorePoints, cabbageCount, upgrades, cabbageUpgrades,
+                        completedLevels, totalResources, scorePoints, cabbageCount, silverCoins, diamonds, upgrades, cabbageUpgrades,
                         sonicSkinUnlocked, glebSkinUnlocked, currentSkinId: currentSkin.id,
-                        skinOwnership: skinDefs.map(s => s.owned)
+                        skinOwnership: skinDefs.map(s => s.owned),
+                        coinSkinOwnership: coinSkinDefs.map(s => s.owned),
+                        diamondSkinOwnership: diamondSkinDefs.map(s => s.owned)
                     };
                     localStorage.setItem('antSimSave', JSON.stringify(saveData));
                 } catch(e) {}
@@ -818,51 +1137,56 @@
                     if (saved) {
                         const data = JSON.parse(saved);
                         completedLevels = data.completedLevels || new Array(50).fill(false);
-                        if (completedLevels.length < 50) {
-                            const old = completedLevels;
-                            completedLevels = new Array(50).fill(false);
-                            for (let i = 0; i < old.length; i++) completedLevels[i] = old[i];
-                        }
+                        if (completedLevels.length < 50) { const old = completedLevels; completedLevels = new Array(50).fill(false); for (let i=0;i<old.length;i++) completedLevels[i]=old[i]; }
                         totalResources = data.totalResources || 0;
                         scorePoints = data.scorePoints || 0;
                         cabbageCount = data.cabbageCount || 0;
-                        upgrades = data.upgrades || { speed:0, capacity:0, pheromoneStrength:0 };
-                        cabbageUpgrades = data.cabbageUpgrades || { sprint:0, radar:0, backpack:0 };
+                        silverCoins = data.silverCoins || 0;
+                        diamonds = data.diamonds || 0;
+                        upgrades = data.upgrades || {};
+                        upgrades.speed = upgrades.speed ?? 0;
+                        upgrades.capacity = upgrades.capacity ?? 0;
+                        upgrades.pheromoneStrength = upgrades.pheromoneStrength ?? 0;
+                        upgrades.car = upgrades.car ?? 0;
+                        upgrades.inventory = upgrades.inventory ?? 0;
+                        cabbageUpgrades = data.cabbageUpgrades || {};
+                        cabbageUpgrades.sprint = cabbageUpgrades.sprint ?? 0;
+                        cabbageUpgrades.radar = cabbageUpgrades.radar ?? 0;
+                        cabbageUpgrades.backpack = cabbageUpgrades.backpack ?? 0;
                         sonicSkinUnlocked = data.sonicSkinUnlocked || false;
                         glebSkinUnlocked = data.glebSkinUnlocked || false;
-                        if (data.skinOwnership) {
-                            for (let i = 0; i < Math.min(skinDefs.length, data.skinOwnership.length); i++) {
-                                skinDefs[i].owned = data.skinOwnership[i];
-                            }
-                        }
+                        if (data.skinOwnership) for (let i=0;i<Math.min(skinDefs.length,data.skinOwnership.length);i++) skinDefs[i].owned = data.skinOwnership[i];
+                        if (data.coinSkinOwnership) for (let i=0;i<Math.min(coinSkinDefs.length,data.coinSkinOwnership.length);i++) coinSkinDefs[i].owned = data.coinSkinOwnership[i];
+                        if (data.diamondSkinOwnership) for (let i=0;i<Math.min(diamondSkinDefs.length,data.diamondSkinOwnership.length);i++) diamondSkinDefs[i].owned = data.diamondSkinOwnership[i];
                         const skin = skinDefs.find(s => s.id === data.currentSkinId);
                         if (skin) { skinDefs.forEach(s => s.equipped = false); skin.equipped = true; currentSkin = skin; }
-                    } else {
-                        try { const savedLevels = localStorage.getItem('antLevels'); if (savedLevels) { const arr = JSON.parse(savedLevels); completedLevels = new Array(50).fill(false); for (let i = 0; i < Math.min(arr.length, 50); i++) completedLevels[i] = arr[i]; } } catch(e) {}
                     }
-                } catch(e) {
-                    try { const savedLevels = localStorage.getItem('antLevels'); if (savedLevels) { const arr = JSON.parse(savedLevels); completedLevels = new Array(50).fill(false); for (let i = 0; i < Math.min(arr.length, 50); i++) completedLevels[i] = arr[i]; } } catch(e2) {}
-                }
+                } catch(e) {}
                 for (const skin of skinDefs) { if (skin.unlockLevel && completedLevels[skin.unlockLevel-1]) skin.owned = true; }
                 if (sonicSkinUnlocked) { const skin = skinDefs.find(s => s.id === 'tr_spice'); if (skin) skin.owned = true; }
                 if (glebSkinUnlocked) { const skin = skinDefs.find(s => s.id === 'gleb176'); if (skin) skin.owned = true; }
+                if (upgrades.inventory) inventoryHud.classList.add('visible');
             }
 
-            const terrainCache={};
-            function drawTerrain(ctx,cam){
-                const startTX=Math.floor(cam.x/120)*120, startTY=Math.floor(cam.y/120)*120;
-                const endTX=Math.ceil((cam.x+canvas.width)/120)*120, endTY=Math.ceil((cam.y+canvas.height)/120)*120;
-                for(let tx=startTX;tx<=endTX;tx+=120){ for(let ty=startTY;ty<=endTY;ty+=120){
-                    const key=`${tx},${ty}`; if(!terrainCache[key]){ const shade=0.75+Math.sin(tx*0.013+ty*0.009)*0.15+Math.cos(tx*0.007-ty*0.011)*0.1; terrainCache[key]=`rgb(${85*shade},${145*shade},${55*shade})`; }
-                    const sx=tx-cam.x, sy=ty-cam.y; ctx.fillStyle=terrainCache[key]; ctx.fillRect(sx,sy,122,122);
-                    const pseudoRandom=((tx*37+ty*73)*16807%2147483647)/2147483647; if(pseudoRandom<0.18){ ctx.fillStyle='rgba(139,107,74,0.3)'; ctx.beginPath(); ctx.arc(sx+60+Math.sin(tx*37)*30,sy+60+Math.cos(ty*73)*30,25+pseudoRandom*30,0,Math.PI*2); ctx.fill(); }
-                } }
-                ctx.strokeStyle='rgba(80,140,40,0.4)'; ctx.lineWidth=1;
-                for(let i=0;i<60;i++){ const gx=(i*373+127)%WORLD_W, gy=(i*619+311)%WORLD_H; const sx=gx-cam.x,sy=gy-cam.y; if(sx<-20||sx>canvas.width+20||sy<-20||sy>canvas.height+20) continue; for(let t=0;t<3;t++){ const ta=i*0.7+t*2.1; ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+Math.cos(ta)*8,sy-6-t*3); ctx.stroke(); } }
+            const terrainCache = {};
+            function drawTerrain(ctx, cam) {
+                const startTX = Math.floor(cam.x/120)*120, startTY = Math.floor(cam.y/120)*120;
+                const endTX = Math.ceil((cam.x+canvas.width)/120)*120, endTY = Math.ceil((cam.y+canvas.height)/120)*120;
+                for (let tx=startTX; tx<=endTX; tx+=120) {
+                    for (let ty=startTY; ty<=endTY; ty+=120) {
+                        const key = `${tx},${ty}`;
+                        if (!terrainCache[key]) {
+                            const shade = 0.75 + Math.sin(tx*0.013+ty*0.009)*0.15 + Math.cos(tx*0.007-ty*0.011)*0.1;
+                            terrainCache[key] = `rgb(${85*shade},${145*shade},${55*shade})`;
+                        }
+                        ctx.fillStyle = terrainCache[key];
+                        ctx.fillRect(tx-cam.x, ty-cam.y, 122, 122);
+                    }
+                }
             }
 
-            let lastTime=performance.now(), resourceRespawnTimer=0;
-            function gameLoop(time){
+            let lastTime = performance.now(), resourceRespawnTimer = 0;
+            function gameLoop(time) {
                 requestAnimationFrame(gameLoop);
                 let dt = (time - lastTime)/1000; if (dt > 0.1) dt = 0.1; if (dt <= 0) dt = 0.016; lastTime = time;
                 if (gameState === 'playing') update(dt);
@@ -873,99 +1197,69 @@
             function update(dt) {
                 if (!anthill) return;
                 anthill.update(dt);
-                if (playerAnt) {
-                    playerAnt.update(dt);
-                    camera.targetX = playerAnt.x - canvas.width/2;
-                    camera.targetY = playerAnt.y - canvas.height/2;
-                }
+                if (carActive) { carTimer -= dt; if (carTimer <= 0) { carActive = false; carTimer = 0; } }
+                else if (carCooldownRemaining > 0) { carCooldownRemaining -= dt; if (carCooldownRemaining < 0) carCooldownRemaining = 0; }
+                if (playerAnt) { playerAnt.update(dt); camera.targetX = playerAnt.x - canvas.width/2; camera.targetY = playerAnt.y - canvas.height/2; }
                 for (const ant of aiAnts) ant.update(dt);
                 for (const res of resources) res.update(dt);
-                for (let i=pheromoneTrails.length-1; i>=0; i--) {
-                    const t = pheromoneTrails[i]; t.life -= dt; t.strength = t.life / t.maxLife;
-                    if (t.life <= 0) pheromoneTrails.splice(i,1);
-                }
+                for (let i=pheromoneTrails.length-1;i>=0;i--) { const t = pheromoneTrails[i]; t.life -= dt; t.strength = t.life/t.maxLife; if (t.life <= 0) pheromoneTrails.splice(i,1); }
                 while (pheromoneTrails.length > 600) pheromoneTrails.shift();
                 updateParticles(dt);
-                camera.x += (camera.targetX - camera.x) * 6 * dt;
-                camera.y += (camera.targetY - camera.y) * 6 * dt;
-                camera.x = Math.max(-50, Math.min(WORLD_W - canvas.width + 50, camera.x));
-                camera.y = Math.max(-50, Math.min(WORLD_H - canvas.height + 50, camera.y));
+                camera.x += (camera.targetX - camera.x) * 6 * dt; camera.y += (camera.targetY - camera.y) * 6 * dt;
+                camera.x = Math.max(-50, Math.min(WORLD_W-canvas.width+50, camera.x)); camera.y = Math.max(-50, Math.min(WORLD_H-canvas.height+50, camera.y));
                 resourceRespawnTimer += dt;
-                if (resourceRespawnTimer > 4 && resources.length < 40) {
+                if (resourceRespawnTimer > 4 && resources.length < 45) {
                     resourceRespawnTimer = 0;
                     const types = ['mushroom','mushroom','mushroom','leaf','leaf','crystal','berry','cabbage'];
                     resources.push(new Resource(60+Math.random()*(WORLD_W-120), 60+Math.random()*(WORLD_H-120), types[Math.floor(Math.random()*types.length)]));
+                    if (upgrades.inventory && Math.random() < 0.2) resources.push(new Resource(60+Math.random()*(WORLD_W-120), 60+Math.random()*(WORLD_H-120), 'coin'));
+                    if (Math.random() < 0.04) resources.push(new Resource(60+Math.random()*(WORLD_W-120), 60+Math.random()*(WORLD_H-120), 'diamond'));
                 }
                 if (minimapHint.style.opacity > 0.1) minimapHint.style.opacity = Math.max(0, parseFloat(minimapHint.style.opacity) - dt*0.08);
-
-                // Gleb176 mode
+                updateHUD();
                 if (settings.glebMode && gameState === 'playing' && playerAnt) {
                     if (glebAnt) {
                         glebAnt.update(dt);
-                        if (Math.hypot(playerAnt.x - glebAnt.x, playerAnt.y - glebAnt.y) < 30) {
+                        if (Math.hypot(playerAnt.x-glebAnt.x, playerAnt.y-glebAnt.y) < 30) {
                             totalResources = 0; cabbageCount = 0; updateHUD();
-                            playerAnt.x = anthill.x + 50; playerAnt.y = anthill.y + 30;
-                            playerAnt.carryingResources = [];
-                            glebAnt = new GlebAnt(playerAnt.x + 200, playerAnt.y - 100, playerAnt);
-                            glebSurvivalTimer = 0;
+                            playerAnt.x = anthill.x+50; playerAnt.y = anthill.y+30; playerAnt.carryingResources = [];
+                            glebAnt = new GlebAnt(playerAnt.x+200, playerAnt.y-100, playerAnt); glebSurvivalTimer = 0;
                             spawnParticles(playerAnt.x, playerAnt.y, '#ff0000', 25);
                         } else {
                             glebSurvivalTimer += dt;
                             if (glebSurvivalTimer >= GLEB_SURVIVAL_TIME) {
                                 cabbageCount += 10;
-                                if (!glebSkinUnlocked) {
-                                    glebSkinUnlocked = true;
-                                    const skin = skinDefs.find(s => s.id === 'gleb176');
-                                    if (skin) skin.owned = true;
-                                }
-                                saveGame();
-                                settings.glebMode = false;
-                                document.getElementById('toggle-gleb').classList.remove('on');
-                                glebAnt = null; glebSurvivalTimer = 0;
-                                updateAllBalances(); updateHUD();
-                                spawnParticles(playerAnt.x, playerAnt.y, '#ffd700', 40);
+                                if (!glebSkinUnlocked) { glebSkinUnlocked = true; const skin = skinDefs.find(s => s.id === 'gleb176'); if (skin) skin.owned = true; }
+                                saveGame(); settings.glebMode = false;
+                                document.getElementById('toggle-gleb').classList.remove('on'); glebAnt = null; glebSurvivalTimer = 0;
+                                updateAllBalances(); updateHUD(); spawnParticles(playerAnt.x, playerAnt.y, '#ffd700', 40);
                             }
                         }
-                    } else {
-                        glebAnt = new GlebAnt(playerAnt.x + 200, playerAnt.y - 100, playerAnt);
-                        glebSurvivalTimer = 0;
-                    }
+                    } else { glebAnt = new GlebAnt(playerAnt.x+200, playerAnt.y-100, playerAnt); glebSurvivalTimer = 0; }
                 }
-
-                // Sonic EXE mode
                 if (settings.sonicMode && gameState === 'playing' && playerAnt) {
                     if (sonicAnt) {
                         sonicAnt.update(dt);
-                        if (Math.hypot(playerAnt.x - sonicAnt.x, playerAnt.y - sonicAnt.y) < 25) {
+                        if (Math.hypot(playerAnt.x-sonicAnt.x, playerAnt.y-sonicAnt.y) < 25) {
                             totalResources = 0; cabbageCount = 0; updateHUD();
-                            playerAnt.x = anthill.x + 50; playerAnt.y = anthill.y + 30;
-                            playerAnt.carryingResources = [];
-                            sonicAnt = new SonicAnt(playerAnt.x + 200, playerAnt.y - 100, playerAnt);
-                            sonicSurvivalTimer = 0;
+                            playerAnt.x = anthill.x+50; playerAnt.y = anthill.y+30; playerAnt.carryingResources = [];
+                            sonicAnt = new SonicAnt(playerAnt.x+200, playerAnt.y-100, playerAnt); sonicSurvivalTimer = 0;
                             spawnParticles(playerAnt.x, playerAnt.y, '#ff0000', 20);
                         } else {
                             sonicSurvivalTimer += dt;
                             if (sonicSurvivalTimer >= SONIC_SURVIVAL_TIME && !sonicSkinUnlocked) {
-                                sonicSkinUnlocked = true;
-                                const skin = skinDefs.find(s => s.id === 'tr_spice');
-                                if (skin) skin.owned = true;
-                                saveGame();
-                                settings.sonicMode = false;
-                                document.getElementById('toggle-sonic').classList.remove('on');
-                                sonicAnt = null;
-                                audio.setSonicMusic(false);
-                                updateAllBalances();
+                                sonicSkinUnlocked = true; const skin = skinDefs.find(s => s.id === 'tr_spice'); if (skin) skin.owned = true;
+                                saveGame(); settings.sonicMode = false;
+                                document.getElementById('toggle-sonic').classList.remove('on'); sonicAnt = null;
+                                audio.setSonicMusic(false); updateAllBalances();
                             }
                         }
-                    } else {
-                        sonicAnt = new SonicAnt(playerAnt.x + 200, playerAnt.y - 100, playerAnt);
-                        sonicSurvivalTimer = 0;
-                    }
+                    } else { sonicAnt = new SonicAnt(playerAnt.x+200, playerAnt.y-100, playerAnt); sonicSurvivalTimer = 0; }
                 }
             }
 
             function render() {
-                ctx.clearRect(0,0,canvas.width,canvas.height);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 if ((gameState === 'playing' || gameState === 'map') && anthill) {
                     drawTerrain(ctx, camera);
                     anthill.draw(ctx, camera);
@@ -977,83 +1271,24 @@
                     drawParticles(ctx, camera);
                     if (clickTarget) {
                         const sx = clickTarget.x - camera.x, sy = clickTarget.y - camera.y;
-                        ctx.strokeStyle = 'rgba(255,220,150,0.6)'; ctx.lineWidth = 2;
-                        ctx.setLineDash([6,4]); ctx.beginPath(); ctx.arc(sx, sy, 10+Math.sin(Date.now()/400)*4, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
-                        ctx.fillStyle = 'rgba(255,220,150,0.5)'; ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI*2); ctx.fill();
+                        ctx.strokeStyle = 'rgba(255,220,150,0.6)'; ctx.setLineDash([6,4]);
+                        ctx.beginPath(); ctx.arc(sx, sy, 10+Math.sin(Date.now()/400)*4, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
                     }
-                    if (settings.darkness && playerAnt) {
-                        const sx = playerAnt.x - camera.x, sy = playerAnt.y - camera.y;
-                        ctx.save();
-                        ctx.fillStyle = '#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
-                        ctx.globalCompositeOperation = 'destination-out';
-                        const gradient = ctx.createRadialGradient(sx, sy, 100, sx, sy, 150);
-                        gradient.addColorStop(0, 'rgba(0,0,0,1)'); gradient.addColorStop(1, 'rgba(0,0,0,0)');
-                        ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(sx, sy, 150, 0, Math.PI*2); ctx.fill();
-                        ctx.restore();
+                    if (settings.pheromones) for (const trail of pheromoneTrails) {
+                        const sx = trail.x-camera.x, sy = trail.y-camera.y;
+                        ctx.fillStyle = trail.fromPlayer ? `rgba(200,180,140,${trail.strength*0.5})` : `rgba(255,200,100,${trail.strength*0.7})`;
+                        ctx.beginPath(); ctx.arc(sx, sy, trail.fromPlayer?2.5:3.5, 0, Math.PI*2); ctx.fill();
                     }
-                    if (settings.pheromones) {
-                        for (const trail of pheromoneTrails) {
-                            const sx = trail.x - camera.x, sy = trail.y - camera.y;
-                            ctx.fillStyle = trail.fromPlayer ? `rgba(200,180,140,${trail.strength*0.5})` : `rgba(255,200,100,${trail.strength*0.7})`;
-                            ctx.beginPath(); ctx.arc(sx, sy, trail.fromPlayer?2.5:3.5, 0, Math.PI*2); ctx.fill();
-                        }
-                    }
-                    if (settings.glebMode && playerAnt && glebSurvivalTimer < GLEB_SURVIVAL_TIME) {
-                        const remaining = Math.max(0, GLEB_SURVIVAL_TIME - glebSurvivalTimer);
-                        ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(canvas.width/2 - 55, 10, 110, 30);
-                        ctx.strokeStyle = '#ff5080'; ctx.lineWidth = 2; ctx.strokeRect(canvas.width/2 - 55, 10, 110, 30);
-                        ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Segoe UI, Arial'; ctx.textAlign = 'center';
-                        ctx.fillText(`⏱ ${remaining.toFixed(1)}s`, canvas.width/2, 33);
-                        ctx.textAlign = 'start';
-                    }
-                    const mmW=140, mmH=100, mmX=canvas.width-mmW-16, mmY=canvas.height-mmH-16;
-                    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.strokeStyle='rgba(200,160,100,0.6)'; ctx.lineWidth=2;
-                    ctx.beginPath(); ctx.roundRect(mmX,mmY,mmW,mmH,8); ctx.fill(); ctx.stroke();
-                    ctx.save(); ctx.beginPath(); ctx.roundRect(mmX,mmY,mmW,mmH,8); ctx.clip();
-                    ctx.fillStyle='#5a8a3a'; ctx.fillRect(mmX,mmY,mmW,mmH);
-                    ctx.fillStyle='#6b4a2a'; ctx.beginPath(); ctx.arc(mmX+anthill.x*(mmW/WORLD_W), mmY+anthill.y*(mmH/WORLD_H), 3, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle='#ffe090'; for (const res of resources) if (!res.carriedBy) ctx.fillRect(mmX+res.x*(mmW/WORLD_W)-0.8, mmY+res.y*(mmH/WORLD_H)-0.8, 1.6, 1.6);
-                    ctx.fillStyle='#e0c080'; for (const ant of aiAnts) ctx.fillRect(mmX+ant.x*(mmW/WORLD_W)-1, mmY+ant.y*(mmH/WORLD_H)-1, 2, 2);
-                    if (playerAnt) { ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mmX+playerAnt.x*(mmW/WORLD_W), mmY+playerAnt.y*(mmH/WORLD_H), 2.5, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle='#000'; ctx.lineWidth=0.8; ctx.stroke(); }
-                    if (glebAnt && settings.glebMode) { ctx.fillStyle='#ff3060'; ctx.beginPath(); ctx.arc(mmX+glebAnt.x*(mmW/WORLD_W), mmY+glebAnt.y*(mmH/WORLD_H), 3, 0, Math.PI*2); ctx.fill(); }
-                    ctx.restore();
-                    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='9px Segoe UI, Arial'; ctx.fillText('МИНИ-КАРТА', mmX+6, mmY+14);
                 } else if (gameState === 'menu') {
                     const bgGrad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 100, canvas.width/2, canvas.height/2, canvas.width);
-                    bgGrad.addColorStop(0,'#3d5a2a'); bgGrad.addColorStop(1,'#1a2a10');
-                    ctx.fillStyle = bgGrad; ctx.fillRect(0,0,canvas.width,canvas.height);
-                    const t = Date.now()/1000;
-                    for (let i=0; i<8; i++) {
-                        const ax = canvas.width*(0.15 + (i*0.7)/8 + Math.sin(t*0.7+i)*0.1);
-                        const ay = canvas.height*(0.3 + Math.cos(t*0.5+i*1.3)*0.3);
-                        ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.arc(ax, ay+2, 6, 0, Math.PI*2); ctx.fill();
-                        ctx.fillStyle='#3a2010'; ctx.beginPath(); ctx.arc(ax, ay, 5, 0, Math.PI*2); ctx.fill();
-                        ctx.fillStyle='#1a0a00'; ctx.beginPath(); ctx.arc(ax+4, ay, 3.5, 0, Math.PI*2); ctx.fill();
-                    }
+                    bgGrad.addColorStop(0, '#3d5a2a'); bgGrad.addColorStop(1, '#1a2a10');
+                    ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
                 }
-            }
-
-            if (!ctx.roundRect) {
-                ctx.roundRect = function(x,y,w,h,r) {
-                    if (typeof r === 'number') r = {tl:r, tr:r, br:r, bl:r};
-                    ctx.beginPath();
-                    ctx.moveTo(x+r.tl, y);
-                    ctx.lineTo(x+w-r.tr, y);
-                    ctx.quadraticCurveTo(x+w, y, x+w, y+r.tr);
-                    ctx.lineTo(x+w, y+h-r.br);
-                    ctx.quadraticCurveTo(x+w, y+h, x+w-r.br, y+h);
-                    ctx.lineTo(x+r.bl, y+h);
-                    ctx.quadraticCurveTo(x, y+h, x, y+h-r.bl);
-                    ctx.lineTo(x, y+r.tl);
-                    ctx.quadraticCurveTo(x, y, x+r.tl, y);
-                    ctx.closePath();
-                };
             }
 
             function init() {
                 resize(); loadProgress(); updateAllBalances(); updateSettingsUI();
-                mainMenu.classList.remove('hidden'); closeAllPanels(); gameState='menu'; updateHUD();
-                audio.init();
+                mainMenu.classList.remove('hidden'); closeAllPanels(); gameState = 'menu'; updateHUD(); audio.init();
             }
             init();
             requestAnimationFrame(gameLoop);
